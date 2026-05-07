@@ -2,15 +2,17 @@ import { useState, useEffect } from "react";
 
 export default function App() {
   const [screen, setScreen] = useState("home");
+
   const [a, setA] = useState(0);
   const [b, setB] = useState(0);
-  const [op, setOp] = useState("*");
+  const [op, setOp] = useState("+");
   const [answer, setAnswer] = useState("");
 
   const [score, setScore] = useState(0);
   const [time, setTime] = useState(30);
   const [running, setRunning] = useState(false);
 
+  // Génération calcul
   const generate = () => {
     const ops = ["+", "-", "*"];
     setA(Math.floor(Math.random() * 90 + 10));
@@ -19,36 +21,53 @@ export default function App() {
     setAnswer("");
   };
 
-  const check = () => {
-    let res;
-    if (op === "+") res = a + b;
-    if (op === "-") res = a - b;
-    if (op === "*") res = a * b;
+  // Validation + passage au suivant
+  const handleValidate = () => {
+    let result;
 
-    if (Number(answer) === res) {
+    if (op === "+") result = a + b;
+    if (op === "-") result = a - b;
+    if (op === "*") result = a * b;
+
+    if (Number(answer) === result) {
       setScore((s) => s + 1);
     }
+
+    generate();
   };
 
+  // ENTER clavier (PC + certains claviers mobiles)
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === "Enter" && screen === "game") {
+        handleValidate();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [answer, screen]);
+
+  // Chrono
   useEffect(() => {
     if (!running) return;
 
-    const t = setInterval(() => {
-      setTime((x) => {
-        if (x <= 1) {
-          clearInterval(t);
+    const timer = setInterval(() => {
+      setTime((t) => {
+        if (t <= 1) {
+          clearInterval(timer);
           setRunning(false);
           setScreen("end");
           return 0;
         }
-        return x - 1;
+        return t - 1;
       });
     }, 1000);
 
-    return () => clearInterval(t);
+    return () => clearInterval(timer);
   }, [running]);
 
-  const start = () => {
+  const startGame = () => {
     setScore(0);
     setTime(30);
     setRunning(true);
@@ -62,7 +81,7 @@ export default function App() {
       {screen === "home" && (
         <div style={styles.center}>
           <h1>🧠 Calcul Mental</h1>
-          <button style={styles.btn} onClick={start}>
+          <button style={styles.btn} onClick={startGame}>
             Lancer le jeu
           </button>
         </div>
@@ -70,34 +89,31 @@ export default function App() {
 
       {screen === "game" && (
         <div style={styles.center}>
-          <h2>{a} {op} {b}</h2>
+          <h2>
+            {a} {op} {b}
+          </h2>
 
           <input
             style={styles.input}
+            type="number"
             value={answer}
             onChange={(e) => setAnswer(e.target.value)}
-            type="number"
+            placeholder="Ta réponse"
           />
 
-          <button
-            style={styles.btn}
-            onClick={() => {
-              check();
-              generate();
-            }}
-          >
+          <button style={styles.btn} onClick={handleValidate}>
             Valider
           </button>
 
-          <p>⏱️ {time}s</p>
+          <p>⏱️ Temps : {time}s</p>
           <p>🏆 Score : {score}</p>
         </div>
       )}
 
       {screen === "end" && (
         <div style={styles.center}>
-          <h2>Fin du jeu 🎯</h2>
-          <p>Score : {score}</p>
+          <h2>🎯 Fin du jeu</h2>
+          <p>Score final : {score}</p>
 
           <button style={styles.btn} onClick={() => setScreen("home")}>
             Rejouer
@@ -109,6 +125,7 @@ export default function App() {
   );
 }
 
+// Styles mobile app
 const styles = {
   container: {
     height: "100vh",
@@ -116,7 +133,9 @@ const styles = {
     justifyContent: "center",
     alignItems: "center",
     fontFamily: "sans-serif",
-    background: "#f5f5f5"
+    background: "#f5f5f5",
+    color: "#111",
+    padding: 20
   },
   center: {
     textAlign: "center"
@@ -124,11 +143,14 @@ const styles = {
   btn: {
     padding: "15px 25px",
     fontSize: "18px",
-    marginTop: "10px"
+    marginTop: "10px",
+    cursor: "pointer"
   },
   input: {
     fontSize: "20px",
     padding: "10px",
-    marginTop: "10px"
+    marginTop: "10px",
+    width: "150px",
+    textAlign: "center"
   }
 };
