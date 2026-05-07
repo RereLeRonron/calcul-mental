@@ -51,26 +51,30 @@ export default function App() {
   }
 
   function validate(val) {
-    if (val === "" || val === null) return;
+  if (val === "" || val === null) return;
 
-    const user = parseFloat(val);
-    const correct = getAnswer();
+  const user = parseFloat(val);
+  const correct = getAnswer();
 
-    if (user === correct) {
-      setScore((s) => s + 1);
-      setMessage("✔ Correct !");
-      playSuccessSound();
-
-      setTimeout(() => {
-        newQuestion();
-      }, 250);
-    } else {
-      setScore(0);
-      setMessage(`❌ Faux (réponse : ${correct})`);
-      setInput("");
-    }
+  // on attend que la longueur soit suffisante
+  if (val.length < String(correct).length) {
+    return;
   }
 
+  if (user === correct) {
+    setScore((s) => s + 1);
+    setMessage("✔ Correct !");
+    playSuccessSound();
+
+    setTimeout(() => {
+      newQuestion();
+    }, 250);
+  } else {
+    setScore(0);
+    setMessage(`❌ Faux`);
+    setInput("");
+  }
+}
   function handleVoice() {
     const SpeechRecognition =
       window.SpeechRecognition || window.webkitSpeechRecognition;
