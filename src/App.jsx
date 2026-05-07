@@ -4,12 +4,14 @@ export default function App() {
   const [mode, setMode] = useState("addition");
   const [niveau, setNiveau] = useState(2);
   const [input, setInput] = useState("");
+
   const [a, setA] = useState(0);
   const [b, setB] = useState(0);
+
   const [score, setScore] = useState(0);
   const [message, setMessage] = useState("");
 
-  const [inputMode, setInputMode] = useState("clavier"); // clavier ou vocal
+  const [inputMode, setInputMode] = useState("clavier");
 
   function rand(niveau) {
     const min = Math.pow(10, niveau - 1);
@@ -24,35 +26,52 @@ export default function App() {
     setMessage("");
   }
 
-  function getAnswer() {
-    if (mode === "addition") return a + b;
-    if (mode === "soustraction") return a - b;
-    if (mode === "multiplication") return a * b;
-    if (mode === "division") return Math.round((a / b) * 100) / 100;
-    if (mode === "carre") return a * a;
+  function getAnswer(x = a, y = b) {
+    if (mode === "addition") return x + y;
+    if (mode === "soustraction") return x - y;
+    if (mode === "multiplication") return x * y;
+    if (mode === "division") return Math.round((x / y) * 100) / 100;
+    if (mode === "carre") return x * x;
   }
 
-  function check() {
-  const user = parseFloat(input);
-  const correct = getAnswer();
+  function playSuccessSound() {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
 
-  if (user === correct) {
-    setScore(score + 1);
-    setMessage("✔ Correct !");
-    newQuestion(); // 👉 on passe au suivant UNIQUEMENT si bon
-  } else {
-    setScore(0);
-    setMessage(`❌ Faux (réponse : ${correct})`);
-    setInput(""); // on efface juste la réponse
-  }
-}
+    osc.type = "sine";
+    osc.frequency.value = 800;
+    gain.gain.value = 0.1;
 
-  function handleKeyDown(e) {
-    if (e.key === "Enter") check();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+
+    osc.start();
+    osc.stop(ctx.currentTime + 0.15);
   }
 
-  /* 🎤 RECONNAISSANCE VOCALE */
-  function startVoice() {
+  function validate(val) {
+    if (val === "" || val === null) return;
+
+    const user = parseFloat(val);
+    const correct = getAnswer();
+
+    if (user === correct) {
+      setScore((s) => s + 1);
+      setMessage("✔ Correct !");
+      playSuccessSound();
+
+      setTimeout(() => {
+        newQuestion();
+      }, 250);
+    } else {
+      setScore(0);
+      setMessage(`❌ Faux (réponse : ${correct})`);
+      setInput("");
+    }
+  }
+
+  function handleVoice() {
     const SpeechRecognition =
       window.SpeechRecognition || window.webkitSpeechRecognition;
 
@@ -66,10 +85,12 @@ export default function App() {
 
     recognition.start();
 
-    recognition.onresult = (event) => {
-      const text = event.results[0][0].transcript;
+    recognition.onresult = (e) => {
+      const text = e.results[0][0].transcript;
       const cleaned = text.replace(/[^0-9.-]/g, "");
+
       setInput(cleaned);
+      validate(cleaned);
     };
   }
 
@@ -84,7 +105,7 @@ export default function App() {
 
         <div>Score : {score}</div>
 
-        {/* MODE + NIVEAU */}
+        {/* CONTROLES */}
         <div style={styles.row}>
           <select value={mode} onChange={(e) => setMode(e.target.value)}>
             <option value="addition">➕</option>
@@ -115,41 +136,46 @@ export default function App() {
 
         {/* INPUT */}
         {inputMode === "clavier" ? (
-          <input
-            style={styles.input}
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder="Réponse"
-          />
+          <>
+            <input
+              style={styles.input}
+              value={input}
+              onChange={(e) => {
+                const val = e.target.value;
+                setInput(val);
+                validate(val);
+              }}
+              placeholder="Réponse"
+            />
+
+            {/* PAVÉ NUMÉRIQUE */}
+            <div style={styles.pad}>
+              {[1,2,3,4,5,6,7,8,9,0].map((n) => (
+                <button
+                  key={n}
+                  style={styles.padBtn}
+                  onClick={() => {
+                    const val = input + n;
+                    setInput(val);
+                    validate(val);
+                  }}
+                >
+                  {n}
+                </button>
+              ))}
+
+              <button style={styles.padBtn} onClick={() => setInput("")}>
+                C
+              </button>
+            </div>
+          </>
         ) : (
           <>
             <div style={{ marginBottom: 10 }}>{input || "..."}</div>
-            <button style={styles.buttonVocal} onClick={startVoice}>
+            <button style={styles.voiceBtn} onClick={handleVoice}>
               🎤 Parler
             </button>
           </>
-        )}
-
-        {/* PAVE NUMERIQUE */}
-        {inputMode === "clavier" && (
-          <div style={styles.pad}>
-            {[1,2,3,4,5,6,7,8,9,0].map((n) => (
-              <button
-                key={n}
-                style={styles.padBtn}
-                onClick={() => setInput(input + n)}
-              >
-                {n}
-              </button>
-            ))}
-            <button style={styles.padBtn} onClick={() => setInput("")}>
-              C
-            </button>
-            <button style={styles.padBtn} onClick={check}>
-              OK
-            </button>
-          </div>
         )}
 
         <div style={styles.message}>{message}</div>
@@ -179,7 +205,6 @@ const styles = {
     display: "flex",
     gap: 5,
     marginBottom: 10,
-    justifyContent: "space-between",
   },
   question: {
     fontSize: 24,
@@ -192,21 +217,12 @@ const styles = {
     textAlign: "center",
     borderRadius: 8,
     border: "none",
-  },
-  buttonVocal: {
-    padding: 10,
-    width: "100%",
     marginBottom: 10,
-    background: "#3b82f6",
-    color: "white",
-    border: "none",
-    borderRadius: 8,
   },
   pad: {
     display: "grid",
     gridTemplateColumns: "repeat(3, 1fr)",
     gap: 5,
-    marginTop: 10,
   },
   padBtn: {
     padding: 15,
@@ -214,6 +230,14 @@ const styles = {
     borderRadius: 8,
     border: "none",
     background: "#334155",
+    color: "white",
+  },
+  voiceBtn: {
+    padding: 10,
+    width: "100%",
+    background: "#3b82f6",
+    border: "none",
+    borderRadius: 8,
     color: "white",
   },
   message: {
