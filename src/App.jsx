@@ -76,27 +76,40 @@ export default function App() {
   }
 }
   function handleVoice() {
-    const SpeechRecognition =
-      window.SpeechRecognition || window.webkitSpeechRecognition;
+  const SpeechRecognition =
+    window.SpeechRecognition || window.webkitSpeechRecognition;
 
-    if (!SpeechRecognition) {
-      alert("Reconnaissance vocale non supportée");
-      return;
-    }
-
-    const recognition = new SpeechRecognition();
-    recognition.lang = "fr-FR";
-
-    recognition.start();
-
-    recognition.onresult = (e) => {
-      const text = e.results[0][0].transcript;
-      const cleaned = text.replace(/[^0-9.-]/g, "");
-
-      setInput(cleaned);
-      validate(cleaned);
-    };
+  if (!SpeechRecognition) {
+    alert("Reconnaissance vocale non supportée");
+    return;
   }
+
+  const recognition = new SpeechRecognition();
+
+  recognition.lang = "fr-FR";
+  recognition.continuous = true;
+  recognition.interimResults = false;
+
+  recognition.start();
+
+  recognition.onresult = (e) => {
+    const text = e.results[e.results.length - 1][0].transcript;
+
+    const cleaned = text.replace(/[^0-9.-]/g, "");
+
+    setInput(cleaned);
+
+    validate(cleaned);
+  };
+
+  recognition.onerror = (e) => {
+    console.log(e);
+  };
+
+  recognition.onend = () => {
+    recognition.start();
+  };
+}
 
   useEffect(() => {
     newQuestion();
@@ -176,7 +189,7 @@ export default function App() {
         ) : (
           <>
             <div style={{ marginBottom: 10 }}>{input || "..."}</div>
-            <button style={styles.voiceBtn} onClick={handleVoice}>
+            <button style={styles.voiceBtn} onClick={() => handleVoice()}>
               🎤 Parler
             </button>
           </>
