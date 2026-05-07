@@ -201,21 +201,23 @@ const styles = {
     display: "flex",
     justifyContent: "center",
     alignItems: "center",
-    background: "#f1f5f9",
+    background: "#0f172a",
     fontFamily: "Arial",
   },
 
   card: {
     width: 320,
-    background: "white",
+    background: "#1e293b",
     padding: 20,
-    borderRadius: 12,
+    borderRadius: 16,
     textAlign: "center",
-    boxShadow: "0 2px 10px rgba(0,0,0,0.1)",
+    boxShadow: "0 10px 30px rgba(0,0,0,0.4)",
+    color: "white",
   },
 
   score: {
     marginBottom: 10,
+    color: "#cbd5e1",
   },
 
   row: {
@@ -226,8 +228,9 @@ const styles = {
   },
 
   question: {
-    fontSize: 26,
+    fontSize: 28,
     marginBottom: 10,
+    color: "white",
   },
 
   input: {
@@ -236,6 +239,11 @@ const styles = {
     fontSize: 18,
     textAlign: "center",
     marginBottom: 10,
+    borderRadius: 8,
+    border: "none",
+    background: "#0f172a",
+    color: "white",
+    outline: "none",
   },
 
   pad: {
@@ -247,9 +255,11 @@ const styles = {
 
   btn: {
     padding: 10,
-    background: "#e2e8f0",
+    background: "#334155",
     border: "none",
     fontSize: 18,
+    color: "white",
+    borderRadius: 8,
   },
 
   voice: {
@@ -259,6 +269,7 @@ const styles = {
     color: "white",
     border: "none",
     marginBottom: 5,
+    borderRadius: 8,
   },
 
   skip: {
@@ -267,5 +278,6 @@ const styles = {
     background: "#ef4444",
     color: "white",
     border: "none",
+    borderRadius: 8,
   },
 };
