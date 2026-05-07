@@ -3,12 +3,13 @@ import { useEffect, useState } from "react";
 export default function App() {
   const [mode, setMode] = useState("addition");
   const [niveau, setNiveau] = useState(2);
-
+  const [input, setInput] = useState("");
   const [a, setA] = useState(0);
   const [b, setB] = useState(0);
-  const [input, setInput] = useState("");
   const [score, setScore] = useState(0);
   const [message, setMessage] = useState("");
+
+  const [inputMode, setInputMode] = useState("clavier"); // clavier ou vocal
 
   function rand(niveau) {
     const min = Math.pow(10, niveau - 1);
@@ -17,11 +18,8 @@ export default function App() {
   }
 
   function newQuestion() {
-    const x = rand(niveau);
-    const y = rand(niveau);
-
-    setA(x);
-    setB(y);
+    setA(rand(niveau));
+    setB(rand(niveau));
     setInput("");
     setMessage("");
   }
@@ -32,7 +30,6 @@ export default function App() {
     if (mode === "multiplication") return a * b;
     if (mode === "division") return Math.round((a / b) * 100) / 100;
     if (mode === "carre") return a * a;
-    return 0;
   }
 
   function check() {
@@ -54,6 +51,28 @@ export default function App() {
     if (e.key === "Enter") check();
   }
 
+  /* 🎤 RECONNAISSANCE VOCALE */
+  function startVoice() {
+    const SpeechRecognition =
+      window.SpeechRecognition || window.webkitSpeechRecognition;
+
+    if (!SpeechRecognition) {
+      alert("Reconnaissance vocale non supportée");
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.lang = "fr-FR";
+
+    recognition.start();
+
+    recognition.onresult = (event) => {
+      const text = event.results[0][0].transcript;
+      const cleaned = text.replace(/[^0-9.-]/g, "");
+      setInput(cleaned);
+    };
+  }
+
   useEffect(() => {
     newQuestion();
   }, [mode, niveau]);
@@ -61,24 +80,29 @@ export default function App() {
   return (
     <div style={styles.container}>
       <div style={styles.card}>
-        <h1>Coach mental</h1>
+        <h2>Coach mental</h2>
 
-        <div style={styles.score}>Score : {score}</div>
+        <div>Score : {score}</div>
 
-        {/* MODE */}
+        {/* MODE + NIVEAU */}
         <div style={styles.row}>
           <select value={mode} onChange={(e) => setMode(e.target.value)}>
-            <option value="addition">➕ Addition</option>
-            <option value="soustraction">➖ Soustraction</option>
-            <option value="multiplication">✖️ Multiplication</option>
-            <option value="division">➗ Division</option>
-            <option value="carre">🔢 Carré</option>
+            <option value="addition">➕</option>
+            <option value="soustraction">➖</option>
+            <option value="multiplication">✖️</option>
+            <option value="division">➗</option>
+            <option value="carre">🔢²</option>
           </select>
 
-          <select value={niveau} onChange={(e) => setNiveau(parseInt(e.target.value))}>
+          <select value={niveau} onChange={(e) => setNiveau(Number(e.target.value))}>
             <option value={2}>2 chiffres</option>
             <option value={3}>3 chiffres</option>
             <option value={4}>4 chiffres</option>
+          </select>
+
+          <select value={inputMode} onChange={(e) => setInputMode(e.target.value)}>
+            <option value="clavier">⌨️ clavier</option>
+            <option value="vocal">🎤 vocal</option>
           </select>
         </div>
 
@@ -89,17 +113,44 @@ export default function App() {
             : `${a} ${mode === "addition" ? "+" : mode === "soustraction" ? "-" : mode === "multiplication" ? "×" : "÷"} ${b} = ?`}
         </div>
 
-        <input
-          style={styles.input}
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={handleKeyDown}
-          placeholder="Réponse"
-        />
+        {/* INPUT */}
+        {inputMode === "clavier" ? (
+          <input
+            style={styles.input}
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder="Réponse"
+          />
+        ) : (
+          <>
+            <div style={{ marginBottom: 10 }}>{input || "..."}</div>
+            <button style={styles.buttonVocal} onClick={startVoice}>
+              🎤 Parler
+            </button>
+          </>
+        )}
 
-        <button style={styles.button} onClick={check}>
-          Valider
-        </button>
+        {/* PAVE NUMERIQUE */}
+        {inputMode === "clavier" && (
+          <div style={styles.pad}>
+            {[1,2,3,4,5,6,7,8,9,0].map((n) => (
+              <button
+                key={n}
+                style={styles.padBtn}
+                onClick={() => setInput(input + n)}
+              >
+                {n}
+              </button>
+            ))}
+            <button style={styles.padBtn} onClick={() => setInput("")}>
+              C
+            </button>
+            <button style={styles.padBtn} onClick={check}>
+              OK
+            </button>
+          </div>
+        )}
 
         <div style={styles.message}>{message}</div>
       </div>
@@ -119,45 +170,53 @@ const styles = {
   },
   card: {
     background: "#1e293b",
-    padding: 25,
+    padding: 20,
     borderRadius: 20,
-    textAlign: "center",
     width: 340,
-  },
-  score: {
-    marginBottom: 10,
-    fontSize: 18,
+    textAlign: "center",
   },
   row: {
     display: "flex",
+    gap: 5,
+    marginBottom: 10,
     justifyContent: "space-between",
-    gap: 10,
-    marginBottom: 15,
   },
   question: {
-    fontSize: 26,
-    marginBottom: 20,
+    fontSize: 24,
+    marginBottom: 15,
   },
   input: {
+    width: "100%",
     padding: 10,
     fontSize: 18,
+    textAlign: "center",
+    borderRadius: 8,
+    border: "none",
+  },
+  buttonVocal: {
+    padding: 10,
     width: "100%",
     marginBottom: 10,
-    borderRadius: 8,
+    background: "#3b82f6",
+    color: "white",
     border: "none",
-    textAlign: "center",
+    borderRadius: 8,
   },
-  button: {
-    padding: 10,
-    width: "100%",
+  pad: {
+    display: "grid",
+    gridTemplateColumns: "repeat(3, 1fr)",
+    gap: 5,
+    marginTop: 10,
+  },
+  padBtn: {
+    padding: 15,
     fontSize: 18,
     borderRadius: 8,
     border: "none",
-    background: "#22c55e",
+    background: "#334155",
     color: "white",
   },
   message: {
-    marginTop: 15,
-    fontSize: 16,
+    marginTop: 10,
   },
 };
