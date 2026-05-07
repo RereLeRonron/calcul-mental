@@ -93,6 +93,50 @@ export default function App() {
   recognition.start();
 
   recognition.onresult = (e) => {
+    const transcript =
+      e.results[e.results.length - 1][0].transcript;
+
+    console.log("Voix :", transcript);
+
+    // garde uniquement les chiffres
+    const cleaned = transcript.replace(/\D/g, "");
+
+    if (!cleaned) return;
+
+    setInput(cleaned);
+
+    const user = parseInt(cleaned);
+    const correct = getAnswer();
+
+    if (user === correct) {
+      setScore((s) => s + 1);
+      setMessage("✔ Correct !");
+      playSuccessSound();
+
+      setTimeout(() => {
+        newQuestion();
+      }, 300);
+    }
+  };
+
+  recognition.onerror = (e) => {
+    console.log(e);
+  };
+
+  recognition.onend = () => {
+    recognition.start();
+  };
+}
+
+  const recognition = new SpeechRecognition();
+
+  recognition.lang = "fr-FR";
+  recognition.continuous = true;
+  recognition.interimResults = false;
+
+  recognition.start();
+
+  recognition.onresult = (e) => {
     const text = e.results[e.results.length - 1][0].transcript;
 
     const cleaned = text.replace(/[^0-9.-]/g, "");
