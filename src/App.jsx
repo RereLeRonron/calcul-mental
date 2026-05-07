@@ -1,65 +1,134 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 export default function App() {
+  const [screen, setScreen] = useState("home");
   const [a, setA] = useState(0);
   const [b, setB] = useState(0);
-  const [operator, setOperator] = useState("*");
+  const [op, setOp] = useState("*");
   const [answer, setAnswer] = useState("");
-  const [result, setResult] = useState(null);
-  const [showResult, setShowResult] = useState(false);
+
+  const [score, setScore] = useState(0);
+  const [time, setTime] = useState(30);
+  const [running, setRunning] = useState(false);
 
   const generate = () => {
-    const num1 = Math.floor(Math.random() * 90 + 10);
-    const num2 = Math.floor(Math.random() * 90 + 10);
-    setA(num1);
-    setB(num2);
+    const ops = ["+", "-", "*"];
+    setA(Math.floor(Math.random() * 90 + 10));
+    setB(Math.floor(Math.random() * 90 + 10));
+    setOp(ops[Math.floor(Math.random() * ops.length)]);
     setAnswer("");
-    setResult(null);
-    setShowResult(false);
   };
 
   const check = () => {
-    let correct;
-    if (operator === "+") correct = a + b;
-    if (operator === "-") correct = a - b;
-    if (operator === "*") correct = a * b;
+    let res;
+    if (op === "+") res = a + b;
+    if (op === "-") res = a - b;
+    if (op === "*") res = a * b;
 
-    setResult(Number(answer) === correct);
+    if (Number(answer) === res) {
+      setScore((s) => s + 1);
+    }
+  };
+
+  useEffect(() => {
+    if (!running) return;
+
+    const t = setInterval(() => {
+      setTime((x) => {
+        if (x <= 1) {
+          clearInterval(t);
+          setRunning(false);
+          setScreen("end");
+          return 0;
+        }
+        return x - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(t);
+  }, [running]);
+
+  const start = () => {
+    setScore(0);
+    setTime(30);
+    setRunning(true);
+    generate();
+    setScreen("game");
   };
 
   return (
-    <div style={{ padding: 20, fontFamily: "sans-serif" }}>
-      <h1>Calcul Mental</h1>
+    <div style={styles.container}>
 
-      <h2>{a} {operator} {b}</h2>
-
-      <button onClick={generate}>Lancer</button>
-
-      <div style={{ marginTop: 20 }}>
-        <input
-          type="number"
-          value={answer}
-          onChange={(e) => setAnswer(e.target.value)}
-          placeholder="Ta réponse"
-        />
-        <button onClick={check}>Valider</button>
-      </div>
-
-      {result === true && <h3 style={{ color: "green" }}>✔ Bravo</h3>}
-      {result === false && <h3 style={{ color: "red" }}>❌ Faux</h3>}
-
-      <button onClick={() => setShowResult(!showResult)}>
-        Voir résultat
-      </button>
-
-      {showResult && result !== null && (
-        <p>
-          Résultat correct :
-          {operator === "+" && a + b}
-          {operator === "-" && a - b}
-          {operator === "*" && a * b}
-        </p>
+      {screen === "home" && (
+        <div style={styles.center}>
+          <h1>🧠 Calcul Mental</h1>
+          <button style={styles.btn} onClick={start}>
+            Lancer le jeu
+          </button>
+        </div>
       )}
+
+      {screen === "game" && (
+        <div style={styles.center}>
+          <h2>{a} {op} {b}</h2>
+
+          <input
+            style={styles.input}
+            value={answer}
+            onChange={(e) => setAnswer(e.target.value)}
+            type="number"
+          />
+
+          <button
+            style={styles.btn}
+            onClick={() => {
+              check();
+              generate();
+            }}
+          >
+            Valider
+          </button>
+
+          <p>⏱️ {time}s</p>
+          <p>🏆 Score : {score}</p>
+        </div>
+      )}
+
+      {screen === "end" && (
+        <div style={styles.center}>
+          <h2>Fin du jeu 🎯</h2>
+          <p>Score : {score}</p>
+
+          <button style={styles.btn} onClick={() => setScreen("home")}>
+            Rejouer
+          </button>
+        </div>
+      )}
+
     </div>
   );
 }
+
+const styles = {
+  container: {
+    height: "100vh",
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    fontFamily: "sans-serif",
+    background: "#f5f5f5"
+  },
+  center: {
+    textAlign: "center"
+  },
+  btn: {
+    padding: "15px 25px",
+    fontSize: "18px",
+    marginTop: "10px"
+  },
+  input: {
+    fontSize: "20px",
+    padding: "10px",
+    marginTop: "10px"
+  }
+};
