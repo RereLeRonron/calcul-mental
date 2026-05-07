@@ -1,19 +1,24 @@
 import { useEffect, useState } from "react";
 
 export default function App() {
+  const [mode, setMode] = useState("addition");
+  const [niveau, setNiveau] = useState(2);
+
   const [a, setA] = useState(0);
   const [b, setB] = useState(0);
   const [input, setInput] = useState("");
   const [score, setScore] = useState(0);
   const [message, setMessage] = useState("");
 
-  function randomDecimal() {
-    return (Math.random() * 20).toFixed(2); 
+  function rand(niveau) {
+    const min = Math.pow(10, niveau - 1);
+    const max = Math.pow(10, niveau) - 1;
+    return Math.floor(Math.random() * (max - min + 1)) + min;
   }
 
   function newQuestion() {
-    const x = parseFloat(randomDecimal());
-    const y = parseFloat(randomDecimal());
+    const x = rand(niveau);
+    const y = rand(niveau);
 
     setA(x);
     setB(y);
@@ -21,41 +26,67 @@ export default function App() {
     setMessage("");
   }
 
-  function checkAnswer() {
-    const result = parseFloat(input);
+  function getAnswer() {
+    if (mode === "addition") return a + b;
+    if (mode === "soustraction") return a - b;
+    if (mode === "multiplication") return a * b;
+    if (mode === "division") return Math.round((a / b) * 100) / 100;
+    if (mode === "carre") return a * a;
+    return 0;
+  }
 
-    const correct = parseFloat((a + b).toFixed(2));
+  function check() {
+    const user = parseFloat(input);
+    const correct = getAnswer();
 
-    if (result === correct) {
+    if (user === correct) {
       setScore(score + 1);
-      setMessage("✔ Bonne réponse !");
+      setMessage("✔ Correct !");
     } else {
       setScore(0);
-      setMessage("❌ Mauvais !");
+      setMessage(`❌ Faux (réponse : ${correct})`);
     }
 
     newQuestion();
   }
 
   function handleKeyDown(e) {
-    if (e.key === "Enter") {
-      checkAnswer();
-    }
+    if (e.key === "Enter") check();
   }
 
   useEffect(() => {
     newQuestion();
-  }, []);
+  }, [mode, niveau]);
 
   return (
     <div style={styles.container}>
       <div style={styles.card}>
-        <h1 style={styles.title}>Calcul mental</h1>
+        <h1>Coach mental</h1>
 
         <div style={styles.score}>Score : {score}</div>
 
+        {/* MODE */}
+        <div style={styles.row}>
+          <select value={mode} onChange={(e) => setMode(e.target.value)}>
+            <option value="addition">➕ Addition</option>
+            <option value="soustraction">➖ Soustraction</option>
+            <option value="multiplication">✖️ Multiplication</option>
+            <option value="division">➗ Division</option>
+            <option value="carre">🔢 Carré</option>
+          </select>
+
+          <select value={niveau} onChange={(e) => setNiveau(parseInt(e.target.value))}>
+            <option value={2}>2 chiffres</option>
+            <option value={3}>3 chiffres</option>
+            <option value={4}>4 chiffres</option>
+          </select>
+        </div>
+
+        {/* QUESTION */}
         <div style={styles.question}>
-          {a} + {b} = ?
+          {mode === "carre"
+            ? `${a}² = ?`
+            : `${a} ${mode === "addition" ? "+" : mode === "soustraction" ? "-" : mode === "multiplication" ? "×" : "÷"} ${b} = ?`}
         </div>
 
         <input
@@ -63,10 +94,10 @@ export default function App() {
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="Ta réponse"
+          placeholder="Réponse"
         />
 
-        <button style={styles.button} onClick={checkAnswer}>
+        <button style={styles.button} onClick={check}>
           Valider
         </button>
 
@@ -88,20 +119,23 @@ const styles = {
   },
   card: {
     background: "#1e293b",
-    padding: 30,
+    padding: 25,
     borderRadius: 20,
     textAlign: "center",
-    width: 320,
-  },
-  title: {
-    marginBottom: 20,
+    width: 340,
   },
   score: {
     marginBottom: 10,
     fontSize: 18,
   },
+  row: {
+    display: "flex",
+    justifyContent: "space-between",
+    gap: 10,
+    marginBottom: 15,
+  },
   question: {
-    fontSize: 28,
+    fontSize: 26,
     marginBottom: 20,
   },
   input: {
