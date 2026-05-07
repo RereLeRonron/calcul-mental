@@ -33,19 +33,19 @@ export default function App() {
   }
 
   function check() {
-    const user = parseFloat(input);
-    const correct = getAnswer();
+  const user = parseFloat(input);
+  const correct = getAnswer();
 
-    if (user === correct) {
-      setScore(score + 1);
-      setMessage("✔ Correct !");
-    } else {
-      setScore(0);
-      setMessage(`❌ Faux (réponse : ${correct})`);
-    }
-
-    newQuestion();
+  if (user === correct) {
+    setScore(score + 1);
+    setMessage("✔ Correct !");
+    newQuestion(); // 👉 on passe au suivant UNIQUEMENT si bon
+  } else {
+    setScore(0);
+    setMessage(`❌ Faux (réponse : ${correct})`);
+    setInput(""); // on efface juste la réponse
   }
+}
 
   function handleKeyDown(e) {
     if (e.key === "Enter") check();
