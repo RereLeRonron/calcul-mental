@@ -7,9 +7,14 @@ export default function App() {
   const [score, setScore] = useState(0);
   const [message, setMessage] = useState("");
 
+  function randomDecimal() {
+    return (Math.random() * 20).toFixed(2); 
+  }
+
   function newQuestion() {
-    const x = Math.floor(Math.random() * 10);
-    const y = Math.floor(Math.random() * 10);
+    const x = parseFloat(randomDecimal());
+    const y = parseFloat(randomDecimal());
+
     setA(x);
     setB(y);
     setInput("");
@@ -17,17 +22,19 @@ export default function App() {
   }
 
   function checkAnswer() {
-    const result = parseInt(input);
+    const result = parseFloat(input);
 
-    if (result === a + b) {
+    const correct = parseFloat((a + b).toFixed(2));
+
+    if (result === correct) {
       setScore(score + 1);
       setMessage("✔ Bonne réponse !");
-      newQuestion();
     } else {
       setScore(0);
       setMessage("❌ Mauvais !");
-      newQuestion();
     }
+
+    newQuestion();
   }
 
   function handleKeyDown(e) {
@@ -57,7 +64,6 @@ export default function App() {
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder="Ta réponse"
-          type="number"
         />
 
         <button style={styles.button} onClick={checkAnswer}>
@@ -85,7 +91,7 @@ const styles = {
     padding: 30,
     borderRadius: 20,
     textAlign: "center",
-    width: 300,
+    width: 320,
   },
   title: {
     marginBottom: 20,
@@ -95,7 +101,7 @@ const styles = {
     fontSize: 18,
   },
   question: {
-    fontSize: 32,
+    fontSize: 28,
     marginBottom: 20,
   },
   input: {
@@ -115,7 +121,6 @@ const styles = {
     border: "none",
     background: "#22c55e",
     color: "white",
-    cursor: "pointer",
   },
   message: {
     marginTop: 15,
