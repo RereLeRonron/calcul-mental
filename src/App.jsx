@@ -17,8 +17,32 @@ export default function App() {
   }
 
   function newQuestion() {
-    setA(rand(digits));
-    setB(rand(digits));
+    // 🎯 MODE ASTUCE 1 : unités complémentaires = 10
+    if (mode === "astuce_unites10") {
+      const d = rand(digits);
+      const u1 = rand(1);
+      const u2 = 10 - u1;
+
+      setA(d * 10 + u1);
+      setB(d * 10 + u2);
+    }
+
+    // 🎯 MODE ASTUCE 2 : dizaines complémentaires = 10 + unités identiques
+    else if (mode === "astuce_dizaines10") {
+      const d1 = rand(1);
+      const d2 = 10 - d1;
+      const u = rand(9);
+
+      setA(d1 * 10 + u);
+      setB(d2 * 10 + u);
+    }
+
+    // 🎯 modes classiques
+    else {
+      setA(rand(digits));
+      setB(rand(digits));
+    }
+
     setInput("");
   }
 
@@ -32,6 +56,9 @@ export default function App() {
     if (mode === "multiplication") return a * b;
     if (mode === "division") return Math.round((a / b) * 100) / 100;
     if (mode === "carre") return a * a;
+
+    // astuce modes = multiplication réelle
+    return a * b;
   }
 
   function successSound() {
@@ -114,7 +141,7 @@ export default function App() {
       ? "×"
       : mode === "division"
       ? "÷"
-      : "²";
+      : "×";
 
   return (
     <div style={styles.page}>
@@ -130,6 +157,14 @@ export default function App() {
             <option value="multiplication">Multiplication</option>
             <option value="division">Division</option>
             <option value="carre">Carré</option>
+
+            <option value="astuce_unites10">
+              Astuce : unités = 10
+            </option>
+
+            <option value="astuce_dizaines10">
+              Astuce : dizaines = 10
+            </option>
           </select>
 
           <select
