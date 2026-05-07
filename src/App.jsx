@@ -1,156 +1,124 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 
 export default function App() {
-  const [screen, setScreen] = useState("home");
-
   const [a, setA] = useState(0);
   const [b, setB] = useState(0);
-  const [op, setOp] = useState("+");
-  const [answer, setAnswer] = useState("");
-
+  const [input, setInput] = useState("");
   const [score, setScore] = useState(0);
-  const [time, setTime] = useState(30);
-  const [running, setRunning] = useState(false);
+  const [message, setMessage] = useState("");
 
-  // Génération calcul
-  const generate = () => {
-    const ops = ["+", "-", "*"];
-    setA(Math.floor(Math.random() * 90 + 10));
-    setB(Math.floor(Math.random() * 90 + 10));
-    setOp(ops[Math.floor(Math.random() * ops.length)]);
-    setAnswer("");
-  };
+  function newQuestion() {
+    const x = Math.floor(Math.random() * 10);
+    const y = Math.floor(Math.random() * 10);
+    setA(x);
+    setB(y);
+    setInput("");
+    setMessage("");
+  }
 
-  // Validation + passage au suivant
-  const handleValidate = () => {
-    let result;
+  function checkAnswer() {
+    const result = parseInt(input);
 
-    if (op === "+") result = a + b;
-    if (op === "-") result = a - b;
-    if (op === "*") result = a * b;
-
-    if (Number(answer) === result) {
-      setScore((s) => s + 1);
+    if (result === a + b) {
+      setScore(score + 1);
+      setMessage("✔ Bonne réponse !");
+      newQuestion();
+    } else {
+      setScore(0);
+      setMessage("❌ Mauvais !");
+      newQuestion();
     }
+  }
 
-    generate();
-  };
+  function handleKeyDown(e) {
+    if (e.key === "Enter") {
+      checkAnswer();
+    }
+  }
 
-  // ENTER clavier (PC + certains claviers mobiles)
   useEffect(() => {
-    const handleKeyDown = (e) => {
-      if (e.key === "Enter" && screen === "game") {
-        handleValidate();
-      }
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [answer, screen]);
-
-  // Chrono
-  useEffect(() => {
-    if (!running) return;
-
-    const timer = setInterval(() => {
-      setTime((t) => {
-        if (t <= 1) {
-          clearInterval(timer);
-          setRunning(false);
-          setScreen("end");
-          return 0;
-        }
-        return t - 1;
-      });
-    }, 1000);
-
-    return () => clearInterval(timer);
-  }, [running]);
-
-  const startGame = () => {
-    setScore(0);
-    setTime(30);
-    setRunning(true);
-    generate();
-    setScreen("game");
-  };
+    newQuestion();
+  }, []);
 
   return (
     <div style={styles.container}>
+      <div style={styles.card}>
+        <h1 style={styles.title}>Calcul mental</h1>
 
-      {screen === "home" && (
-        <div style={styles.center}>
-          <h1>🧠 Calcul Mental</h1>
-          <button style={styles.btn} onClick={startGame}>
-            Lancer le jeu
-          </button>
+        <div style={styles.score}>Score : {score}</div>
+
+        <div style={styles.question}>
+          {a} + {b} = ?
         </div>
-      )}
 
-      {screen === "game" && (
-        <div style={styles.center}>
-          <h2>
-            {a} {op} {b}
-          </h2>
+        <input
+          style={styles.input}
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={handleKeyDown}
+          placeholder="Ta réponse"
+          type="number"
+        />
 
-          <input
-            style={styles.input}
-            type="number"
-            value={answer}
-            onChange={(e) => setAnswer(e.target.value)}
-            placeholder="Ta réponse"
-          />
+        <button style={styles.button} onClick={checkAnswer}>
+          Valider
+        </button>
 
-          <button style={styles.btn} onClick={handleValidate}>
-            Valider
-          </button>
-
-          <p>⏱️ Temps : {time}s</p>
-          <p>🏆 Score : {score}</p>
-        </div>
-      )}
-
-      {screen === "end" && (
-        <div style={styles.center}>
-          <h2>🎯 Fin du jeu</h2>
-          <p>Score final : {score}</p>
-
-          <button style={styles.btn} onClick={() => setScreen("home")}>
-            Rejouer
-          </button>
-        </div>
-      )}
-
+        <div style={styles.message}>{message}</div>
+      </div>
     </div>
   );
 }
 
-// Styles mobile app
 const styles = {
   container: {
     height: "100vh",
     display: "flex",
     justifyContent: "center",
     alignItems: "center",
-    fontFamily: "sans-serif",
-    background: "#f5f5f5",
-    color: "#111",
-    padding: 20
+    background: "#0f172a",
+    color: "white",
+    fontFamily: "Arial",
   },
-  center: {
-    textAlign: "center"
+  card: {
+    background: "#1e293b",
+    padding: 30,
+    borderRadius: 20,
+    textAlign: "center",
+    width: 300,
   },
-  btn: {
-    padding: "15px 25px",
-    fontSize: "18px",
-    marginTop: "10px",
-    cursor: "pointer"
+  title: {
+    marginBottom: 20,
+  },
+  score: {
+    marginBottom: 10,
+    fontSize: 18,
+  },
+  question: {
+    fontSize: 32,
+    marginBottom: 20,
   },
   input: {
-    fontSize: "20px",
-    padding: "10px",
-    marginTop: "10px",
-    width: "150px",
-    textAlign: "center"
-  }
+    padding: 10,
+    fontSize: 18,
+    width: "100%",
+    marginBottom: 10,
+    borderRadius: 8,
+    border: "none",
+    textAlign: "center",
+  },
+  button: {
+    padding: 10,
+    width: "100%",
+    fontSize: 18,
+    borderRadius: 8,
+    border: "none",
+    background: "#22c55e",
+    color: "white",
+    cursor: "pointer",
+  },
+  message: {
+    marginTop: 15,
+    fontSize: 16,
+  },
 };
