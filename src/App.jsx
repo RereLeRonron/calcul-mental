@@ -9,6 +9,8 @@ export default function App() {
   const [score, setScore] = useState(0);
   const [listening, setListening] = useState(false);
 
+let recognition;
+
   function rand(n) {
     const min = Math.pow(10, n - 1);
     const max = Math.pow(10, n) - 1;
@@ -65,43 +67,69 @@ export default function App() {
   }
 
   function voice() {
-    const SR =
-      window.SpeechRecognition || window.webkitSpeechRecognition;
+  const SR =
+    window.SpeechRecognition || window.webkitSpeechRecognition;
 
-    if (!SR) return alert("Vocal non supporté");
+  if (!SR) return alert("Vocal non supporté");
 
-    const rec = new SR();
-    rec.lang = "fr-FR";
-    rec.continuous = true;
+  if (recognition) {
+    recognition.stop();
+  }
 
-    setListening(true);
+  recognition = new SR();
 
-    rec.start();
+  recognition.lang = "fr-FR";
+  recognition.continuous = true;
+  recognition.interimResults = false;
 
-    rec.onresult = (e) => {
-      const text =
-        e.results[e.results.length - 1][0].transcript;
+  setListening(true);
 
-      const cleaned = text.replace(/[^0-9.-]/g, "");
+  recognition.start();
 
-      if (!cleaned) return;
+  recognition.onresult = (e) => {
+    const text =
+      e.results[e.results.length - 1][0].transcript;
 
-      setInput(cleaned);
+    const cleaned = text.replace(/[^0-9.-]/g, "");
 
-      const user = parseFloat(cleaned);
-      const correct = getAnswer();
+    if (!cleaned) return;
 
-      if (user === correct) {
-        setScore((s) => s + 1);
-        success();
+    setInput(cleaned);
 
+    const user = parseFloat(cleaned);
+    const correct = getAnswer();
+
+    if (user === correct) {
+      setScore((s) => s + 1);
+      success();
+
+      setInput("");
+
+      setTimeout(() => {
+        newQuestion();
+
+        // 🔥 IMPORTANT : redémarre le micro proprement
         setTimeout(() => {
-          newQuestion();
-        }, 300);
-      } else {
-        setInput(""); // reset si faux
-      }
-    };
+          if (recognition) {
+            recognition.stop();
+            recognition.start();
+          }
+        }, 200);
+
+      }, 250);
+
+    } else {
+      setInput("");
+    }
+  };
+
+  recognition.onend = () => {
+    // 🔥 garde le micro vivant en continu
+    if (listening) {
+      recognition.start();
+    }
+  };
+}
 
     rec.onend = () => rec.start();
   }
