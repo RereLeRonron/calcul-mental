@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 
 export default function App() {
   const [a, setA] = useState(0);
   const [b, setB] = useState(0);
   const [input, setInput] = useState("");
   const [score, setScore] = useState(0);
+
   const [mode, setMode] = useState("addition");
   const [digits, setDigits] = useState(2);
   const [listening, setListening] = useState(false);
@@ -33,7 +34,7 @@ export default function App() {
     if (mode === "carre") return a * a;
   }
 
-  function success() {
+  function successSound() {
     const ctx = new (window.AudioContext || window.webkitAudioContext)();
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
@@ -42,10 +43,10 @@ export default function App() {
     gain.connect(ctx.destination);
 
     osc.frequency.value = 700;
-    gain.gain.value = 0.1;
+    gain.gain.value = 0.08;
 
     osc.start();
-    osc.stop(ctx.currentTime + 0.15);
+    osc.stop(ctx.currentTime + 0.12);
   }
 
   function validate(val) {
@@ -56,8 +57,8 @@ export default function App() {
 
     if (user === correct) {
       setScore((s) => s + 1);
-      success();
-      setTimeout(newQuestion, 250);
+      successSound();
+      setTimeout(newQuestion, 200);
     }
   }
 
@@ -65,11 +66,15 @@ export default function App() {
     const SR =
       window.SpeechRecognition || window.webkitSpeechRecognition;
 
-    if (!SR) return alert("Vocal non supporté");
+    if (!SR) {
+      alert("Vocal non supporté");
+      return;
+    }
 
     const rec = new SR();
     rec.lang = "fr-FR";
     rec.continuous = false;
+    rec.interimResults = false;
 
     setListening(true);
 
@@ -88,11 +93,15 @@ export default function App() {
 
       if (user === correct) {
         setScore((s) => s + 1);
-        success();
-        setTimeout(newQuestion, 250);
+        successSound();
+        setTimeout(newQuestion, 200);
       } else {
         setInput("");
       }
+    };
+
+    rec.onend = () => {
+      setListening(false);
     };
   }
 
@@ -108,34 +117,37 @@ export default function App() {
       : "²";
 
   return (
-    <div style={styles.container}>
+    <div style={styles.page}>
       <div style={styles.card}>
-        <h2>Coach mental</h2>
+        <h2>Calcul mental</h2>
 
-        <div>Score : {score}</div>
+        <div style={styles.score}>Score : {score}</div>
 
-        <select value={mode} onChange={(e) => setMode(e.target.value)}>
-          <option value="addition">+</option>
-          <option value="soustraction">-</option>
-          <option value="multiplication">×</option>
-          <option value="division">÷</option>
-          <option value="carre">²</option>
-        </select>
+        <div style={styles.row}>
+          <select value={mode} onChange={(e) => setMode(e.target.value)}>
+            <option value="addition">Addition</option>
+            <option value="soustraction">Soustraction</option>
+            <option value="multiplication">Multiplication</option>
+            <option value="division">Division</option>
+            <option value="carre">Carré</option>
+          </select>
 
-        <select
-          value={digits}
-          onChange={(e) => setDigits(Number(e.target.value))}
-        >
-          <option value={2}>2 chiffres</option>
-          <option value={3}>3 chiffres</option>
-          <option value={4}>4 chiffres</option>
-        </select>
+          <select
+            value={digits}
+            onChange={(e) => setDigits(Number(e.target.value))}
+          >
+            <option value={2}>2 chiffres</option>
+            <option value={3}>3 chiffres</option>
+            <option value={4}>4 chiffres</option>
+          </select>
+        </div>
 
         <div style={styles.question}>
           {mode === "carre" ? `${a}²` : `${a} ${op} ${b}`}
         </div>
 
         <input
+          style={styles.input}
           value={input}
           onChange={(e) => {
             setInput(e.target.value);
@@ -143,19 +155,40 @@ export default function App() {
           }}
         />
 
-        <button onClick={voice}>
-          {listening ? "🎤..." : "🎤 vocal"}
+        {/* PAVÉ NUMÉRIQUE */}
+        <div style={styles.pad}>
+          {[1,2,3,4,5,6,7,8,9,0].map((n) => (
+            <button
+              key={n}
+              style={styles.btn}
+              onClick={() => {
+                const val = input + n;
+                setInput(val);
+                validate(val);
+              }}
+            >
+              {n}
+            </button>
+          ))}
+
+          <button style={styles.btn} onClick={() => setInput("")}>
+            ⌫
+          </button>
+        </div>
+
+        {/* ACTIONS */}
+        <button style={styles.voice} onClick={voice}>
+          {listening ? "🎤..." : "🎤 Vocal"}
         </button>
 
-        <button onClick={() => setInput("")}>⌫</button>
-
         <button
+          style={styles.skip}
           onClick={() => {
             newQuestion();
             setInput("");
           }}
         >
-          passer
+          Passer
         </button>
       </div>
     </div>
@@ -163,24 +196,76 @@ export default function App() {
 }
 
 const styles = {
-  container: {
+  page: {
     minHeight: "100vh",
     display: "flex",
     justifyContent: "center",
     alignItems: "center",
-    background: "#0f172a",
-    color: "white",
+    background: "#f1f5f9",
     fontFamily: "Arial",
   },
+
   card: {
-    background: "#1e293b",
+    width: 320,
+    background: "white",
     padding: 20,
-    borderRadius: 20,
-    width: 300,
+    borderRadius: 12,
     textAlign: "center",
+    boxShadow: "0 2px 10px rgba(0,0,0,0.1)",
   },
+
+  score: {
+    marginBottom: 10,
+  },
+
+  row: {
+    display: "flex",
+    gap: 10,
+    marginBottom: 15,
+    justifyContent: "center",
+  },
+
   question: {
-    fontSize: 28,
-    margin: 10,
+    fontSize: 26,
+    marginBottom: 10,
+  },
+
+  input: {
+    width: "100%",
+    padding: 10,
+    fontSize: 18,
+    textAlign: "center",
+    marginBottom: 10,
+  },
+
+  pad: {
+    display: "grid",
+    gridTemplateColumns: "repeat(3, 1fr)",
+    gap: 5,
+    marginBottom: 10,
+  },
+
+  btn: {
+    padding: 10,
+    background: "#e2e8f0",
+    border: "none",
+    fontSize: 18,
+  },
+
+  voice: {
+    width: "100%",
+    padding: 10,
+    background: "#3b82f6",
+    color: "white",
+    border: "none",
+    marginBottom: 5,
+  },
+
+  skip: {
+    width: "100%",
+    padding: 10,
+    background: "#ef4444",
+    color: "white",
+    border: "none",
   },
 };
