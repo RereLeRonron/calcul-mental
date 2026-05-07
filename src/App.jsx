@@ -79,6 +79,59 @@ let recognition;
   recognition = new SR();
 
   recognition.lang = "fr-FR";
+  recognition.continuous = false; // 🔥 IMPORTANT (changement clé)
+  recognition.interimResults = false;
+
+  setListening(true);
+
+  recognition.start();
+
+  recognition.onresult = (e) => {
+    const text =
+      e.results[0][0].transcript;
+
+    const cleaned = text.replace(/[^0-9.-]/g, "");
+
+    if (!cleaned) return;
+
+    setInput(cleaned);
+
+    const user = parseFloat(cleaned);
+    const correct = getAnswer();
+
+    if (user === correct) {
+      setScore((s) => s + 1);
+      success();
+
+      setInput("");
+
+      setTimeout(() => {
+        newQuestion();
+
+        // 🔥 redémarrage propre du micro après UI update
+        setTimeout(() => {
+          voice();
+        }, 250);
+
+      }, 200);
+
+    } else {
+      setInput("");
+    }
+  };
+
+  recognition.onerror = () => {
+    setListening(false);
+  };
+
+  recognition.onend = () => {
+    setListening(false);
+  };
+}
+
+  recognition = new SR();
+
+  recognition.lang = "fr-FR";
   recognition.continuous = true;
   recognition.interimResults = false;
 
