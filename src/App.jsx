@@ -1,245 +1,198 @@
-import { useEffect, useState } from "react";
+
+
+import React, { useState, useEffect } from "react";
 
 export default function App() {
-  const [mode, setMode] = useState("addition");
-  const [niveau, setNiveau] = useState(2);
-  const [input, setInput] = useState("");
-
-  const [a, setA] = useState(0);
-  const [b, setB] = useState(0);
-
+  const [num1, setNum1] = useState(0);
+  const [num2, setNum2] = useState(0);
+  const [userAnswer, setUserAnswer] = useState("");
   const [score, setScore] = useState(0);
-  const [message, setMessage] = useState("");
+  const [mode, setMode] = useState("multiplication");
+  const [digits, setDigits] = useState(2);
+  const [listening, setListening] = useState(false);
 
-  const [inputMode, setInputMode] = useState("clavier");
+  function generateNumber(size) {
+    const min = Math.pow(10, size - 1);
+    const max = Math.pow(10, size) - 1;
 
-  function rand(niveau) {
-    const min = Math.pow(10, niveau - 1);
-    const max = Math.pow(10, niveau) - 1;
     return Math.floor(Math.random() * (max - min + 1)) + min;
   }
 
-  function newQuestion() {
-    setA(rand(niveau));
-    setB(rand(niveau));
-    setInput("");
-    setMessage("");
+  function generateQuestion() {
+    const a = generateNumber(digits);
+    const b = generateNumber(digits);
+
+    setNum1(a);
+    setNum2(b);
+    setUserAnswer("");
   }
 
-  function getAnswer(x = a, y = b) {
-    if (mode === "addition") return x + y;
-    if (mode === "soustraction") return x - y;
-    if (mode === "multiplication") return x * y;
-    if (mode === "division") return Math.round((x / y) * 100) / 100;
-    if (mode === "carre") return x * x;
+  useEffect(() => {
+    generateQuestion();
+  }, [mode, digits]);
+
+  function getCorrectAnswer() {
+    if (mode === "addition") return num1 + num2;
+    if (mode === "soustraction") return num1 - num2;
+    if (mode === "multiplication") return num1 * num2;
+    if (mode === "division") return Math.round((num1 / num2) * 100) / 100;
+    if (mode === "carre") return num1 * num1;
+
+    return 0;
   }
 
   function playSuccessSound() {
     const ctx = new (window.AudioContext || window.webkitAudioContext)();
+
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
 
-    osc.type = "sine";
-    osc.frequency.value = 800;
-    gain.gain.value = 0.1;
-
     osc.connect(gain);
     gain.connect(ctx.destination);
+
+    osc.frequency.value = 700;
+    gain.gain.value = 0.1;
 
     osc.start();
     osc.stop(ctx.currentTime + 0.15);
   }
 
-  function validate(val) {
-  if (val === "" || val === null) return;
+  function validate(value) {
+    if (value === "") return;
 
-  const user = parseFloat(val);
-  const correct = getAnswer();
-
-  // on attend que la longueur soit suffisante
-  if (val.length < String(correct).length) {
-    return;
-  }
-
-  if (user === correct) {
-    setScore((s) => s + 1);
-    setMessage("✔ Correct !");
-    playSuccessSound();
-
-    setTimeout(() => {
-      newQuestion();
-    }, 250);
-  } else {
-    setScore(0);
-    setMessage(`❌ Faux`);
-    setInput("");
-  }
-}
-  function handleVoice() {
-  const SpeechRecognition =
-    window.SpeechRecognition || window.webkitSpeechRecognition;
-
-  if (!SpeechRecognition) {
-    alert("Reconnaissance vocale non supportée");
-    return;
-  }
-
-  const recognition = new SpeechRecognition();
-
-  recognition.lang = "fr-FR";
-  recognition.continuous = true;
-  recognition.interimResults = false;
-
-  recognition.start();
-
-  recognition.onresult = (e) => {
-    const transcript =
-      e.results[e.results.length - 1][0].transcript;
-
-    console.log("Voix :", transcript);
-
-    // garde uniquement les chiffres
-    const cleaned = transcript.replace(/\D/g, "");
-
-    if (!cleaned) return;
-
-    setInput(cleaned);
-
-    const user = parseInt(cleaned);
-    const correct = getAnswer();
+    const user = parseFloat(value);
+    const correct = getCorrectAnswer();
 
     if (user === correct) {
       setScore((s) => s + 1);
-      setMessage("✔ Correct !");
+
       playSuccessSound();
 
       setTimeout(() => {
-        newQuestion();
+        generateQuestion();
       }, 300);
     }
-  };
+  }
 
-  recognition.onerror = (e) => {
-    console.log(e);
-  };
+  function startVoiceRecognition() {
+    const SpeechRecognition =
+      window.SpeechRecognition || window.webkitSpeechRecognition;
 
-  recognition.onend = () => {
+    if (!SpeechRecognition) {
+      alert("Reconnaissance vocale non supportée");
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+
+    recognition.lang = "fr-FR";
+    recognition.continuous = true;
+    recognition.interimResults = false;
+
+    setListening(true);
+
     recognition.start();
-  };
-}
 
-  const recognition = new SpeechRecognition();
+    recognition.onresult = (event) => {
+      const transcript =
+        event.results[event.results.length - 1][0].transcript;
 
-  recognition.lang = "fr-FR";
-  recognition.continuous = true;
-  recognition.interimResults = false;
+      const cleaned = transcript
+        .replace(",", ".")
+        .replace(/[^\d.-]/g, "")
+        .trim();
 
-  recognition.start();
+      if (!cleaned) return;
 
-  recognition.onresult = (e) => {
-    const text = e.results[e.results.length - 1][0].transcript;
+      setUserAnswer(cleaned);
 
-    const cleaned = text.replace(/[^0-9.-]/g, "");
+      validate(cleaned);
+    };
 
-    setInput(cleaned);
+    recognition.onerror = () => {
+      setListening(false);
+    };
 
-    validate(cleaned);
-  };
+    recognition.onend = () => {
+      recognition.start();
+    };
+  }
 
-  recognition.onerror = (e) => {
-    console.log(e);
-  };
-
-  recognition.onend = () => {
-    recognition.start();
-  };
-}
-
-  useEffect(() => {
-    newQuestion();
-  }, [mode, niveau]);
+  const operator =
+    mode === "addition"
+      ? "+"
+      : mode === "soustraction"
+      ? "-"
+      : mode === "multiplication"
+      ? "×"
+      : "÷";
 
   return (
     <div style={styles.container}>
       <div style={styles.card}>
-        <h2>Coach mental</h2>
+        <h1>Coach Mental</h1>
 
-        <div>Score : {score}</div>
+        <div style={styles.score}>Score : {score}</div>
 
-        {/* CONTROLES */}
         <div style={styles.row}>
           <select value={mode} onChange={(e) => setMode(e.target.value)}>
-            <option value="addition">➕</option>
-            <option value="soustraction">➖</option>
-            <option value="multiplication">✖️</option>
-            <option value="division">➗</option>
-            <option value="carre">🔢²</option>
+            <option value="addition">Addition</option>
+            <option value="soustraction">Soustraction</option>
+            <option value="multiplication">Multiplication</option>
+            <option value="division">Division</option>
+            <option value="carre">Carré</option>
           </select>
 
-          <select value={niveau} onChange={(e) => setNiveau(Number(e.target.value))}>
+          <select
+            value={digits}
+            onChange={(e) => setDigits(Number(e.target.value))}
+          >
             <option value={2}>2 chiffres</option>
             <option value={3}>3 chiffres</option>
             <option value={4}>4 chiffres</option>
           </select>
-
-          <select value={inputMode} onChange={(e) => setInputMode(e.target.value)}>
-            <option value="clavier">⌨️ clavier</option>
-            <option value="vocal">🎤 vocal</option>
-          </select>
         </div>
 
-        {/* QUESTION */}
         <div style={styles.question}>
           {mode === "carre"
-            ? `${a}² = ?`
-            : `${a} ${mode === "addition" ? "+" : mode === "soustraction" ? "-" : mode === "multiplication" ? "×" : "÷"} ${b} = ?`}
+            ? `${num1}²`
+            : `${num1} ${operator} ${num2}`}
         </div>
 
-        {/* INPUT */}
-        {inputMode === "clavier" ? (
-          <>
-            <input
-              style={styles.input}
-              value={input}
-              onChange={(e) => {
-                const val = e.target.value;
-                setInput(val);
+        <input
+          style={styles.input}
+          value={userAnswer}
+          onChange={(e) => {
+            const val = e.target.value;
+
+            setUserAnswer(val);
+
+            validate(val);
+          }}
+          placeholder="Réponse"
+        />
+
+        <div style={styles.pad}>
+          {[1, 2, 3, 4, 5, 6, 7, 8, 9, 0].map((n) => (
+            <button
+              key={n}
+              style={styles.padBtn}
+              onClick={() => {
+                const val = userAnswer + n;
+
+                setUserAnswer(val);
+
                 validate(val);
               }}
-              placeholder="Réponse"
-            />
-
-            {/* PAVÉ NUMÉRIQUE */}
-            <div style={styles.pad}>
-              {[1,2,3,4,5,6,7,8,9,0].map((n) => (
-                <button
-                  key={n}
-                  style={styles.padBtn}
-                  onClick={() => {
-                    const val = input + n;
-                    setInput(val);
-                    validate(val);
-                  }}
-                >
-                  {n}
-                </button>
-              ))}
-
-              <button style={styles.padBtn} onClick={() => setInput("")}>
-                C
-              </button>
-            </div>
-          </>
-        ) : (
-          <>
-            <div style={{ marginBottom: 10 }}>{input || "..."}</div>
-            <button style={styles.voiceBtn} onClick={() => handleVoice()}>
-              🎤 Parler
+            >
+              {n}
             </button>
-          </>
-        )}
+          ))}
+        </div>
 
-        <div style={styles.message}>{message}</div>
+        <button style={styles.voiceBtn} onClick={startVoiceRecognition}>
+          {listening ? "🎤 Écoute..." : "🎤 Vocal"}
+        </button>
       </div>
     </div>
   );
@@ -247,14 +200,15 @@ export default function App() {
 
 const styles = {
   container: {
-    height: "100vh",
+    minHeight: "100vh",
+    background: "#0f172a",
     display: "flex",
     justifyContent: "center",
     alignItems: "center",
-    background: "#0f172a",
     color: "white",
     fontFamily: "Arial",
   },
+
   card: {
     background: "#1e293b",
     padding: 20,
@@ -262,46 +216,57 @@ const styles = {
     width: 340,
     textAlign: "center",
   },
-  row: {
-    display: "flex",
-    gap: 5,
-    marginBottom: 10,
-  },
-  question: {
-    fontSize: 24,
+
+  score: {
     marginBottom: 15,
   },
+
+  row: {
+    display: "flex",
+    gap: 10,
+    marginBottom: 20,
+  },
+
+  question: {
+    fontSize: 32,
+    marginBottom: 20,
+  },
+
   input: {
     width: "100%",
-    padding: 10,
-    fontSize: 18,
+    padding: 12,
+    fontSize: 22,
     textAlign: "center",
-    borderRadius: 8,
+    borderRadius: 10,
     border: "none",
-    marginBottom: 10,
+    marginBottom: 15,
   },
+
   pad: {
     display: "grid",
     gridTemplateColumns: "repeat(3, 1fr)",
     gap: 5,
+    marginBottom: 15,
   },
+
   padBtn: {
     padding: 15,
-    fontSize: 18,
-    borderRadius: 8,
+    fontSize: 20,
+    borderRadius: 10,
     border: "none",
     background: "#334155",
     color: "white",
   },
+
   voiceBtn: {
-    padding: 10,
     width: "100%",
-    background: "#3b82f6",
+    padding: 15,
+    background: "#7c3aed",
     border: "none",
-    borderRadius: 8,
+    borderRadius: 10,
     color: "white",
-  },
-  message: {
-    marginTop: 10,
+    fontSize: 18,
   },
 };
+
+
