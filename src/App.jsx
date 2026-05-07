@@ -1,49 +1,40 @@
-
-
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 
 export default function App() {
-  const [num1, setNum1] = useState(0);
-  const [num2, setNum2] = useState(0);
-  const [userAnswer, setUserAnswer] = useState("");
-  const [score, setScore] = useState(0);
-  const [mode, setMode] = useState("multiplication");
+  const [mode, setMode] = useState("addition");
   const [digits, setDigits] = useState(2);
+  const [a, setA] = useState(0);
+  const [b, setB] = useState(0);
+  const [input, setInput] = useState("");
+  const [score, setScore] = useState(0);
   const [listening, setListening] = useState(false);
 
-  function generateNumber(size) {
-    const min = Math.pow(10, size - 1);
-    const max = Math.pow(10, size) - 1;
-
+  function rand(n) {
+    const min = Math.pow(10, n - 1);
+    const max = Math.pow(10, n) - 1;
     return Math.floor(Math.random() * (max - min + 1)) + min;
   }
 
-  function generateQuestion() {
-    const a = generateNumber(digits);
-    const b = generateNumber(digits);
-
-    setNum1(a);
-    setNum2(b);
-    setUserAnswer("");
+  function newQuestion() {
+    setA(rand(digits));
+    setB(rand(digits));
+    setInput("");
   }
 
   useEffect(() => {
-    generateQuestion();
+    newQuestion();
   }, [mode, digits]);
 
-  function getCorrectAnswer() {
-    if (mode === "addition") return num1 + num2;
-    if (mode === "soustraction") return num1 - num2;
-    if (mode === "multiplication") return num1 * num2;
-    if (mode === "division") return Math.round((num1 / num2) * 100) / 100;
-    if (mode === "carre") return num1 * num1;
-
-    return 0;
+  function getAnswer() {
+    if (mode === "addition") return a + b;
+    if (mode === "soustraction") return a - b;
+    if (mode === "multiplication") return a * b;
+    if (mode === "division") return Math.round((a / b) * 100) / 100;
+    if (mode === "carre") return a * a;
   }
 
-  function playSuccessSound() {
+  function success() {
     const ctx = new (window.AudioContext || window.webkitAudioContext)();
-
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
 
@@ -57,90 +48,89 @@ export default function App() {
     osc.stop(ctx.currentTime + 0.15);
   }
 
-  function validate(value) {
-    if (value === "") return;
+  function validate(val) {
+    if (val === "") return;
 
-    const user = parseFloat(value);
-    const correct = getCorrectAnswer();
+    const user = parseFloat(val);
+    const correct = getAnswer();
 
     if (user === correct) {
       setScore((s) => s + 1);
-
-      playSuccessSound();
+      success();
 
       setTimeout(() => {
-        generateQuestion();
-      }, 300);
+        newQuestion();
+      }, 250);
     }
   }
 
-  function startVoiceRecognition() {
-    const SpeechRecognition =
+  function voice() {
+    const SR =
       window.SpeechRecognition || window.webkitSpeechRecognition;
 
-    if (!SpeechRecognition) {
-      alert("Reconnaissance vocale non supportée");
-      return;
-    }
+    if (!SR) return alert("Vocal non supporté");
 
-    const recognition = new SpeechRecognition();
-
-    recognition.lang = "fr-FR";
-    recognition.continuous = true;
-    recognition.interimResults = false;
+    const rec = new SR();
+    rec.lang = "fr-FR";
+    rec.continuous = true;
 
     setListening(true);
 
-    recognition.start();
+    rec.start();
 
-    recognition.onresult = (event) => {
-      const transcript =
-        event.results[event.results.length - 1][0].transcript;
+    rec.onresult = (e) => {
+      const text =
+        e.results[e.results.length - 1][0].transcript;
 
-      const cleaned = transcript
-        .replace(",", ".")
-        .replace(/[^\d.-]/g, "")
-        .trim();
+      const cleaned = text.replace(/[^0-9.-]/g, "");
 
       if (!cleaned) return;
 
-      setUserAnswer(cleaned);
+      setInput(cleaned);
 
-      validate(cleaned);
+      const user = parseFloat(cleaned);
+      const correct = getAnswer();
+
+      if (user === correct) {
+        setScore((s) => s + 1);
+        success();
+
+        setTimeout(() => {
+          newQuestion();
+        }, 300);
+      } else {
+        setInput(""); // reset si faux
+      }
     };
 
-    recognition.onerror = () => {
-      setListening(false);
-    };
-
-    recognition.onend = () => {
-      recognition.start();
-    };
+    rec.onend = () => rec.start();
   }
 
-  const operator =
+  const op =
     mode === "addition"
       ? "+"
       : mode === "soustraction"
       ? "-"
       : mode === "multiplication"
       ? "×"
-      : "÷";
+      : mode === "division"
+      ? "÷"
+      : "²";
 
   return (
     <div style={styles.container}>
       <div style={styles.card}>
-        <h1>Coach Mental</h1>
+        <h2>Coach mental</h2>
 
-        <div style={styles.score}>Score : {score}</div>
+        <div>Score : {score}</div>
 
         <div style={styles.row}>
           <select value={mode} onChange={(e) => setMode(e.target.value)}>
-            <option value="addition">Addition</option>
-            <option value="soustraction">Soustraction</option>
-            <option value="multiplication">Multiplication</option>
-            <option value="division">Division</option>
-            <option value="carre">Carré</option>
+            <option value="addition">+</option>
+            <option value="soustraction">-</option>
+            <option value="multiplication">×</option>
+            <option value="division">÷</option>
+            <option value="carre">²</option>
           </select>
 
           <select
@@ -154,44 +144,52 @@ export default function App() {
         </div>
 
         <div style={styles.question}>
-          {mode === "carre"
-            ? `${num1}²`
-            : `${num1} ${operator} ${num2}`}
+          {mode === "carre" ? `${a}²` : `${a} ${op} ${b}`}
         </div>
 
         <input
           style={styles.input}
-          value={userAnswer}
+          value={input}
           onChange={(e) => {
-            const val = e.target.value;
-
-            setUserAnswer(val);
-
-            validate(val);
+            setInput(e.target.value);
+            validate(e.target.value);
           }}
-          placeholder="Réponse"
         />
 
+        {/* PAVÉ */}
         <div style={styles.pad}>
-          {[1, 2, 3, 4, 5, 6, 7, 8, 9, 0].map((n) => (
+          {[1,2,3,4,5,6,7,8,9,0].map((n) => (
             <button
               key={n}
-              style={styles.padBtn}
+              style={styles.btn}
               onClick={() => {
-                const val = userAnswer + n;
-
-                setUserAnswer(val);
-
+                const val = input + n;
+                setInput(val);
                 validate(val);
               }}
             >
               {n}
             </button>
           ))}
+
+          <button style={styles.btn} onClick={() => setInput("")}>
+            ⌫
+          </button>
         </div>
 
-        <button style={styles.voiceBtn} onClick={startVoiceRecognition}>
-          {listening ? "🎤 Écoute..." : "🎤 Vocal"}
+        {/* ACTIONS */}
+        <button style={styles.voice} onClick={voice}>
+          {listening ? "🎤..." : "🎤 Vocal"}
+        </button>
+
+        <button
+          style={styles.skip}
+          onClick={() => {
+            newQuestion();
+            setInput("");
+          }}
+        >
+          Passer ➜
         </button>
       </div>
     </div>
@@ -217,56 +215,53 @@ const styles = {
     textAlign: "center",
   },
 
-  score: {
-    marginBottom: 15,
-  },
-
   row: {
     display: "flex",
     gap: 10,
-    marginBottom: 20,
+    marginBottom: 15,
   },
 
   question: {
-    fontSize: 32,
-    marginBottom: 20,
+    fontSize: 28,
+    marginBottom: 15,
   },
 
   input: {
     width: "100%",
-    padding: 12,
-    fontSize: 22,
+    padding: 10,
+    fontSize: 20,
     textAlign: "center",
-    borderRadius: 10,
-    border: "none",
-    marginBottom: 15,
+    marginBottom: 10,
   },
 
   pad: {
     display: "grid",
     gridTemplateColumns: "repeat(3, 1fr)",
     gap: 5,
-    marginBottom: 15,
+    marginBottom: 10,
   },
 
-  padBtn: {
-    padding: 15,
-    fontSize: 20,
-    borderRadius: 10,
-    border: "none",
+  btn: {
+    padding: 12,
     background: "#334155",
     color: "white",
+    border: "none",
   },
 
-  voiceBtn: {
+  voice: {
     width: "100%",
-    padding: 15,
+    padding: 10,
     background: "#7c3aed",
     border: "none",
-    borderRadius: 10,
     color: "white",
-    fontSize: 18,
+    marginBottom: 5,
+  },
+
+  skip: {
+    width: "100%",
+    padding: 10,
+    background: "#ef4444",
+    border: "none",
+    color: "white",
   },
 };
-
-
