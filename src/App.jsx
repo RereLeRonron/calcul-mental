@@ -120,15 +120,6 @@ let recognition;
     }
   };
 
-  recognition.onerror = () => {
-    setListening(false);
-  };
-
-  recognition.onend = () => {
-    setListening(false);
-  };
-}
-
   recognition = new SR();
 
   recognition.lang = "fr-FR";
