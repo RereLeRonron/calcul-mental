@@ -19,25 +19,54 @@ export default function App() {
   }
 
   function newQuestion() {
-  if (mode === "astuce_unites10") {
-    const d = rand(digits);
-    const u1 = Math.floor(Math.random() * 9) + 1;
-    const u2 = 10 - u1;
+  const r = Math.random();
 
-    setA(d * 10 + u1);
-    setB(d * 10 + u2);
+  // 🔵 niveau débutant
+  if (level <= 2) {
+    setMode("addition");
+    setA(rand(digits));
+    setB(rand(digits));
   }
 
-  else if (mode === "astuce_dizaines10") {
-    const d1 = Math.floor(Math.random() * 9) + 1;
-    const d2 = 10 - d1;
-    const u = Math.floor(Math.random() * 9) + 1;
+  // 🟡 niveau intermédiaire
+  else if (level <= 4) {
+    const modes = ["addition", "soustraction"];
+    setMode(modes[Math.floor(Math.random() * modes.length)]);
 
-    setA(d1 * 10 + u);
-    setB(d2 * 10 + u);
+    setA(rand(digits));
+    setB(rand(digits));
   }
 
+  // 🟠 niveau avancé
+  else if (level <= 6) {
+    const modes = ["multiplication", "addition", "soustraction"];
+    setMode(modes[Math.floor(Math.random() * modes.length)]);
+
+    setA(rand(digits));
+    setB(rand(digits));
+  }
+
+  // 🔴 niveau fort
+  else if (level <= 8) {
+    const modes = ["multiplication", "division", "carre"];
+    setMode(modes[Math.floor(Math.random() * modes.length)]);
+
+    setA(rand(digits));
+    setB(rand(digits));
+  }
+
+  // ⚡ expert (tes astuces incluses)
   else {
+    const special = Math.random();
+
+    if (special < 0.4) {
+      setMode("astuce_unites10");
+    } else if (special < 0.8) {
+      setMode("astuce_dizaines10");
+    } else {
+      setMode("multiplication");
+    }
+
     setA(rand(digits));
     setB(rand(digits));
   }
@@ -78,13 +107,24 @@ export default function App() {
 
   if (user === correct) {
     setScore((s) => s + 1);
+    setStreak((s) => s + 1);
+    setErrors(0);
     successSound();
 
-    setLevel((l) => l + 1); // 🔥 monte en difficulté
+    // 📈 monte doucement en difficulté
+    if (streak > 0 && streak % 5 === 0) {
+      setLevel((l) => l + 1);
+    }
 
     setTimeout(newQuestion, 200);
   } else {
-    setLevel((l) => Math.max(1, l - 1)); // 🔻 baisse un peu
+    setErrors((e) => e + 1);
+    setStreak(0);
+
+    // 📉 si trop d’erreurs → baisse niveau
+    if (errors > 2) {
+      setLevel((l) => Math.max(1, l - 1));
+    }
   }
 }
 
