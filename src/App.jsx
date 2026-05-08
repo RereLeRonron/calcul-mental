@@ -19,42 +19,27 @@ export default function App() {
   }
 
   function newQuestion() {
-  const r = Math.random();
-
-  // 🔵 sécurité absolue : fallback
   let m = "addition";
 
   if (level <= 2) {
     m = "addition";
-  }
-
-  else if (level <= 4) {
-    m = r < 0.5 ? "addition" : "soustraction";
-  }
-
-  else if (level <= 6) {
+  } else if (level <= 4) {
+    m = Math.random() < 0.5 ? "addition" : "soustraction";
+  } else if (level <= 6) {
     const list = ["addition", "soustraction", "multiplication"];
     m = list[Math.floor(Math.random() * list.length)];
-  }
-
-  else if (level <= 8) {
-    const list = ["multiplication", "division", "carre"];
-    m = list[Math.floor(Math.random() * list.length)];
-  }
-
-  else {
-    const special = Math.random();
-
-    if (special < 0.4) m = "astuce_unites10";
-    else if (special < 0.8) m = "astuce_dizaines10";
-    else m = "multiplication";
+  } else {
+    m = "multiplication";
   }
 
   setMode(m);
 
-  // 🔥 IMPORTANT : toujours générer des nombres
-  setA(rand(digits));
-  setB(rand(digits));
+  // 🔥 IMPORTANT : génération TOUJOURS sécurisée ici
+  const aVal = rand(digits);
+  const bVal = rand(digits);
+
+  setA(aVal || 12);
+  setB(bVal || 34);
 
   setInput("");
 }
