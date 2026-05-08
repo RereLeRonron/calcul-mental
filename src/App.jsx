@@ -3,162 +3,229 @@ import React, { useEffect, useState } from "react";
 export default function App() {
   const [a, setA] = useState(0);
   const [b, setB] = useState(0);
+
   const [input, setInput] = useState("");
   const [score, setScore] = useState(0);
 
   const [mode, setMode] = useState("addition");
   const [digits, setDigits] = useState(2);
-  const [listening, setListening] = useState(false);
-  
-  const [level, setLevel] = useState(1);
 
-  useEffect(() => {
-  newQuestion();
-}, []);
+  const [listening, setListening] = useState(false);
+
+  const [level, setLevel] = useState(1);
+  const [streak, setStreak] = useState(0);
+  const [errors, setErrors] = useState(0);
 
   function rand(n) {
     const min = Math.pow(10, n - 1);
     const max = Math.pow(10, n) - 1;
-    return Math.floor(Math.random() * (max - min + 1)) + min;
+
+    return (
+      Math.floor(Math.random() * (max - min + 1)) + min
+    );
   }
 
-  function newQuestion() {
-  let m = "addition";
+  function generateQuestion(selectedMode = mode) {
+    let aVal;
+    let bVal;
 
-  if (level <= 2) {
-    m = "addition";
-  } else if (level <= 4) {
-    m = Math.random() < 0.5 ? "addition" : "soustraction";
-  } else if (level <= 6) {
-    const list = ["addition", "soustraction", "multiplication"];
-    m = list[Math.floor(Math.random() * list.length)];
-  } else {
-    m = "multiplication";
+    // ASTUCE 1
+    if (selectedMode === "astuce_unites10") {
+      const dizaines = Math.floor(Math.random() * 8) + 1;
+
+      const u1 = Math.floor(Math.random() * 9) + 1;
+      const u2 = 10 - u1;
+
+      aVal = dizaines * 10 + u1;
+      bVal = dizaines * 10 + u2;
+    }
+
+    // ASTUCE 2
+    else if (selectedMode === "astuce_dizaines10") {
+      const d1 = Math.floor(Math.random() * 9) + 1;
+      const d2 = 10 - d1;
+
+      const unite = Math.floor(Math.random() * 9) + 1;
+
+      aVal = d1 * 10 + unite;
+      bVal = d2 * 10 + unite;
+    }
+
+    // MODES CLASSIQUES
+    else {
+      aVal = rand(digits);
+      bVal = rand(digits);
+
+      if (selectedMode === "division") {
+        bVal = Math.floor(Math.random() * 9) + 1;
+        aVal = bVal * (Math.floor(Math.random() * 20) + 1);
+      }
+    }
+
+    setA(aVal);
+    setB(bVal);
+
+    setInput("");
   }
 
-  setCurrentMode(m);
+  function nextAdaptiveQuestion() {
+    let nextMode = "addition";
 
-  let aVal, bVal;
+    if (level <= 2) {
+      nextMode = "addition";
+    } else if (level <= 4) {
+      nextMode =
+        Math.random() < 0.5
+          ? "addition"
+          : "soustraction";
+    } else if (level <= 6) {
+      const list = [
+        "addition",
+        "soustraction",
+        "multiplication",
+      ];
 
-  if (m === "astuce_unites10") {
-    const d = rand(digits);
-    const u1 = Math.floor(Math.random() * 9) + 1;
-    const u2 = 10 - u1;
-    aVal = d * 10 + u1;
-    bVal = d * 10 + u2;
-  } else if (m === "astuce_dizaines10") {
-    const d1 = Math.floor(Math.random() * 9) + 1;
-    const d2 = 10 - d1;
-    const u = Math.floor(Math.random() * 9) + 1;
-    aVal = d1 * 10 + u;
-    bVal = d2 * 10 + u;
-  } else {
-    aVal = rand(digits);
-    bVal = rand(digits);
+      nextMode =
+        list[Math.floor(Math.random() * list.length)];
+    } else {
+      const list = [
+        "multiplication",
+        "astuce_unites10",
+        "astuce_dizaines10",
+      ];
+
+      nextMode =
+        list[Math.floor(Math.random() * list.length)];
+    }
+
+    setMode(nextMode);
+
+    generateQuestion(nextMode);
   }
 
-  setA(aVal);
-  setB(bVal);
-  setInput("");
-}
+  useEffect(() => {
+    nextAdaptiveQuestion();
+  }, []);
+
+  useEffect(() => {
+    generateQuestion(mode);
+  }, [digits]);
 
   function getAnswer() {
-  const m = currentMode;
+    if (mode === "addition") return a + b;
 
-  if (m === "addition") return a + b;
-  if (m === "soustraction") return a - b;
-  if (m === "multiplication") return a * b;
-  if (m === "division") return Math.round((a / b) * 100) / 100;
-  if (m === "carre") return a * a;
+    if (mode === "soustraction") return a - b;
 
-  // astuces = multiplication intelligente
-  return a * b;
-}
+    if (mode === "multiplication") return a * b;
+
+    if (mode === "division") return a / b;
+
+    if (mode === "carre") return a * a;
+
+    return a * b;
+  }
 
   function successSound() {
-    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const ctx =
+      new (window.AudioContext ||
+        window.webkitAudioContext)();
+
     const osc = ctx.createOscillator();
+
     const gain = ctx.createGain();
 
     osc.connect(gain);
+
     gain.connect(ctx.destination);
 
     osc.frequency.value = 700;
+
     gain.gain.value = 0.08;
 
     osc.start();
+
     osc.stop(ctx.currentTime + 0.12);
   }
 
   function validate(val) {
-  if (val === "") return;
+    if (val === "") return;
 
-  const user = parseFloat(val);
-  const correct = getAnswer();
+    const user = parseFloat(val);
 
-  if (user === correct) {
-  setScore((s) => s + 1);
-  setStreak((s) => s + 1);
-  setErrors(0);
-  successSound();
+    const correct = getAnswer();
 
-  if (streak > 0 && streak % 5 === 0) {
-    setLevel((l) => l + 1);
+    if (user === correct) {
+      setScore((s) => s + 1);
+
+      setStreak((s) => {
+        const newStreak = s + 1;
+
+        if (newStreak % 5 === 0) {
+          setLevel((l) => l + 1);
+        }
+
+        return newStreak;
+      });
+
+      setErrors(0);
+
+      successSound();
+
+      setTimeout(() => {
+        nextAdaptiveQuestion();
+      }, 250);
+    } else {
+      setInput("");
+
+      setErrors((e) => {
+        const newErrors = e + 1;
+
+        if (newErrors >= 3) {
+          setLevel((l) => Math.max(1, l - 1));
+        }
+
+        return newErrors;
+      });
+
+      setStreak(0);
+    }
   }
-
-  setTimeout(newQuestion, 200);
-} else {
-  setErrors((e) => e + 1);
-  setStreak(0);
-
-  if (errors > 2) {
-    setLevel((l) => Math.max(1, l - 1));
-  }
-}
-}
 
   function voice() {
     const SR =
-      window.SpeechRecognition || window.webkitSpeechRecognition;
+      window.SpeechRecognition ||
+      window.webkitSpeechRecognition;
 
     if (!SR) {
       alert("Reconnaissance vocale non supportée");
+
       return;
     }
 
     const rec = new SR();
 
     rec.lang = "fr-FR";
-    rec.continuous = false;
+
     rec.interimResults = false;
+
+    rec.continuous = false;
 
     setListening(true);
 
     rec.start();
 
     rec.onresult = (e) => {
-      const text = e.results[0][0].transcript;
-      const cleaned = text.replace(/[^0-9.-]/g, "");
+      const text =
+        e.results[0][0].transcript;
+
+      const cleaned =
+        text.replace(/[^0-9.-]/g, "");
 
       if (!cleaned) return;
 
       setInput(cleaned);
 
-      const user = parseFloat(cleaned);
-      const correct = getAnswer();
-
-      if (user === correct) {
-        setScore((s) => s + 1);
-        successSound();
-
-        setTimeout(() => {
-          newQuestion();
-          voice();
-        }, 300);
-      } else {
-        setInput("");
-        voice();
-      }
+      validate(cleaned);
     };
 
     rec.onend = () => {
@@ -171,8 +238,6 @@ export default function App() {
       ? "+"
       : mode === "soustraction"
       ? "-"
-      : mode === "multiplication"
-      ? "×"
       : mode === "division"
       ? "÷"
       : "×";
@@ -182,16 +247,41 @@ export default function App() {
       <div style={styles.card}>
         <h2>Calcul mental</h2>
 
-        <div style={styles.score}>Score : {score}</div>
+        <div style={styles.score}>
+          Score : {score}
+        </div>
+
+        <div style={styles.score}>
+          Niveau : {level}
+        </div>
 
         <div style={styles.row}>
-          <select value={currentMode}
-	onChange={(e) => setCurrentMode(e.target.value)}>
-            <option value="addition">Addition</option>
-            <option value="soustraction">Soustraction</option>
-            <option value="multiplication">Multiplication</option>
-            <option value="division">Division</option>
-            <option value="carre">Carré</option>
+          <select
+            value={mode}
+            onChange={(e) => {
+              setMode(e.target.value);
+              generateQuestion(e.target.value);
+            }}
+          >
+            <option value="addition">
+              Addition
+            </option>
+
+            <option value="soustraction">
+              Soustraction
+            </option>
+
+            <option value="multiplication">
+              Multiplication
+            </option>
+
+            <option value="division">
+              Division
+            </option>
+
+            <option value="carre">
+              Carré
+            </option>
 
             <option value="astuce_unites10">
               Astuce : unités = 10
@@ -204,16 +294,28 @@ export default function App() {
 
           <select
             value={digits}
-            onChange={(e) => setDigits(Number(e.target.value))}
+            onChange={(e) =>
+              setDigits(Number(e.target.value))
+            }
           >
-            <option value={2}>2 chiffres</option>
-            <option value={3}>3 chiffres</option>
-            <option value={4}>4 chiffres</option>
+            <option value={2}>
+              2 chiffres
+            </option>
+
+            <option value={3}>
+              3 chiffres
+            </option>
+
+            <option value={4}>
+              4 chiffres
+            </option>
           </select>
         </div>
 
         <div style={styles.question}>
-          {mode === "carre" ? `${a}²` : `${a} ${op} ${b}`}
+          {mode === "carre"
+            ? `${a}²`
+            : `${a} ${op} ${b}`}
         </div>
 
         <input
@@ -225,7 +327,6 @@ export default function App() {
           }}
         />
 
-        {/* PAVÉ NUMÉRIQUE */}
         <div style={styles.pad}>
           {[1,2,3,4,5,6,7,8,9,0].map((n) => (
             <button
@@ -233,7 +334,9 @@ export default function App() {
               style={styles.btn}
               onClick={() => {
                 const val = input + n;
+
                 setInput(val);
+
                 validate(val);
               }}
             >
@@ -249,32 +352,41 @@ export default function App() {
           </button>
         </div>
 
-      {/* ACTIONS */}
-<button style={styles.voice} onClick={voice}>
-  {listening ? "🎤..." : "🎤 Vocal"}
-</button>
+        <button
+          style={styles.voice}
+          onClick={voice}
+        >
+          {listening
+            ? "🎤 Écoute..."
+            : "🎤 Vocal"}
+        </button>
 
-<div style={{ display: "flex", gap: 5 }}>
-  <button
-    style={styles.solution}
-    onClick={() => {
-      alert(`Solution : ${getAnswer()}`);
-    }}
-  >
-    Solution
-  </button>
+        <div
+          style={{
+            display: "flex",
+            gap: 5,
+          }}
+        >
+          <button
+            style={styles.solution}
+            onClick={() =>
+              alert(
+                `Solution : ${getAnswer()}`
+              )
+            }
+          >
+            Solution
+          </button>
 
-  <button
-    style={styles.skip}
-    onClick={() => {
-      newQuestion();
-      setInput("");
-    }}
-  >
-    Passer
-  </button>
-</div>
-
+          <button
+            style={styles.skip}
+            onClick={() => {
+              nextAdaptiveQuestion();
+            }}
+          >
+            Passer
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -291,17 +403,18 @@ const styles = {
   },
 
   card: {
-    width: 320,
+    width: 340,
     background: "#1e293b",
     padding: 20,
     borderRadius: 16,
     textAlign: "center",
-    boxShadow: "0 10px 30px rgba(0,0,0,0.4)",
+    boxShadow:
+      "0 10px 30px rgba(0,0,0,0.4)",
     color: "white",
   },
 
   score: {
-    marginBottom: 10,
+    marginBottom: 8,
     color: "#cbd5e1",
   },
 
@@ -313,65 +426,70 @@ const styles = {
   },
 
   question: {
-    fontSize: 28,
-    marginBottom: 10,
+    fontSize: 32,
+    marginBottom: 15,
     color: "white",
   },
 
   input: {
     width: "100%",
-    padding: 10,
-    fontSize: 18,
+    padding: 12,
+    fontSize: 20,
     textAlign: "center",
-    marginBottom: 10,
+    marginBottom: 12,
     borderRadius: 8,
     border: "none",
     background: "#0f172a",
     color: "white",
     outline: "none",
+    boxSizing: "border-box",
   },
 
   pad: {
     display: "grid",
     gridTemplateColumns: "repeat(3, 1fr)",
-    gap: 5,
-    marginBottom: 10,
+    gap: 6,
+    marginBottom: 12,
   },
 
   btn: {
-    padding: 10,
+    padding: 12,
     background: "#334155",
     border: "none",
     fontSize: 18,
     color: "white",
     borderRadius: 8,
+    cursor: "pointer",
   },
 
   voice: {
     width: "100%",
-    padding: 10,
+    padding: 12,
     background: "#3b82f6",
     color: "white",
     border: "none",
-    marginBottom: 5,
+    marginBottom: 8,
     borderRadius: 8,
+    cursor: "pointer",
   },
 
   solution: {
     width: "100%",
-    padding: 10,
+    padding: 12,
     background: "#10b981",
     color: "white",
     border: "none",
     borderRadius: 8,
+    cursor: "pointer",
   },
 
   skip: {
     width: "100%",
-    padding: 10,
+    padding: 12,
     background: "#ef4444",
     color: "white",
     border: "none",
     borderRadius: 8,
+    cursor: "pointer",
   },
 };
