@@ -333,12 +333,14 @@ export default function App() {
               key={n}
               style={styles.btn}
               onClick={() => {
-                const val = input + n;
+  setInput((prev) => {
+    const val = prev + n;
 
-                setInput(val);
+    validate(val);
 
-                validate(val);
-              }}
+    return val;
+  });
+}}
             >
               {n}
             </button>
