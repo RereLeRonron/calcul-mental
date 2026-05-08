@@ -216,13 +216,26 @@ export default function App() {
           {listening ? "🎤..." : "🎤 Vocal"}
         </button>
 
-        <button
-          style={styles.skip}
-          onClick={() => {
-            newQuestion();
-            setInput("");
-          }}
-        >
+        <div style={{ display: "flex", gap: 5 }}>
+  <button
+    style={styles.solution}
+    onClick={() => {
+      alert(`Solution : ${getAnswer()}`);
+    }}
+  >
+    Solution
+  </button>
+
+  <button
+    style={styles.skip}
+    onClick={() => {
+      newQuestion();
+      setInput("");
+    }}
+  >
+    Passer
+  </button>
+</div>
           Passer
         </button>
       </div>
@@ -306,6 +319,15 @@ const styles = {
     marginBottom: 5,
     borderRadius: 8,
   },
+
+solution: {
+  width: "100%",
+  padding: 10,
+  background: "#10b981",
+  color: "white",
+  border: "none",
+  borderRadius: 8,
+},
 
   skip: {
     width: "100%",
