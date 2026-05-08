@@ -12,6 +12,10 @@ export default function App() {
   
   const [level, setLevel] = useState(1);
 
+  useEffect(() => {
+  newQuestion();
+}, []);
+
   function rand(n) {
     const min = Math.pow(10, n - 1);
     const max = Math.pow(10, n) - 1;
@@ -32,27 +36,44 @@ export default function App() {
     m = "multiplication";
   }
 
-  setMode(m);
+  setCurrentMode(m);
 
-  // 🔥 IMPORTANT : génération TOUJOURS sécurisée ici
-  const aVal = rand(digits);
-  const bVal = rand(digits);
+  let aVal, bVal;
 
-  setA(aVal || 12);
-  setB(bVal || 34);
+  if (m === "astuce_unites10") {
+    const d = rand(digits);
+    const u1 = Math.floor(Math.random() * 9) + 1;
+    const u2 = 10 - u1;
+    aVal = d * 10 + u1;
+    bVal = d * 10 + u2;
+  } else if (m === "astuce_dizaines10") {
+    const d1 = Math.floor(Math.random() * 9) + 1;
+    const d2 = 10 - d1;
+    const u = Math.floor(Math.random() * 9) + 1;
+    aVal = d1 * 10 + u;
+    bVal = d2 * 10 + u;
+  } else {
+    aVal = rand(digits);
+    bVal = rand(digits);
+  }
 
+  setA(aVal);
+  setB(bVal);
   setInput("");
 }
 
   function getAnswer() {
-    if (mode === "addition") return a + b;
-    if (mode === "soustraction") return a - b;
-    if (mode === "multiplication") return a * b;
-    if (mode === "division") return Math.round((a / b) * 100) / 100;
-    if (mode === "carre") return a * a;
+  const m = currentMode;
 
-    return a * b;
-  }
+  if (m === "addition") return a + b;
+  if (m === "soustraction") return a - b;
+  if (m === "multiplication") return a * b;
+  if (m === "division") return Math.round((a / b) * 100) / 100;
+  if (m === "carre") return a * a;
+
+  // astuces = multiplication intelligente
+  return a * b;
+}
 
   function successSound() {
     const ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -76,26 +97,24 @@ export default function App() {
   const correct = getAnswer();
 
   if (user === correct) {
-    setScore((s) => s + 1);
-    setStreak((s) => s + 1);
-    setErrors(0);
-    successSound();
+  setScore((s) => s + 1);
+  setStreak((s) => s + 1);
+  setErrors(0);
+  successSound();
 
-    // 📈 monte doucement en difficulté
-    if (streak > 0 && streak % 5 === 0) {
-      setLevel((l) => l + 1);
-    }
-
-    setTimeout(newQuestion, 200);
-  } else {
-    setErrors((e) => e + 1);
-    setStreak(0);
-
-    // 📉 si trop d’erreurs → baisse niveau
-    if (errors > 2) {
-      setLevel((l) => Math.max(1, l - 1));
-    }
+  if (streak > 0 && streak % 5 === 0) {
+    setLevel((l) => l + 1);
   }
+
+  setTimeout(newQuestion, 200);
+} else {
+  setErrors((e) => e + 1);
+  setStreak(0);
+
+  if (errors > 2) {
+    setLevel((l) => Math.max(1, l - 1));
+  }
+}
 }
 
   function voice() {
@@ -166,7 +185,8 @@ export default function App() {
         <div style={styles.score}>Score : {score}</div>
 
         <div style={styles.row}>
-          <select value={mode} onChange={(e) => setMode(e.target.value)}>
+          <select value={currentMode}
+	onChange={(e) => setCurrentMode(e.target.value)}>
             <option value="addition">Addition</option>
             <option value="soustraction">Soustraction</option>
             <option value="multiplication">Multiplication</option>
