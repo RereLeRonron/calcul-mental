@@ -17,27 +17,26 @@ export default function App() {
   }
 
   function newQuestion() {
-    // 🎯 MODE ASTUCE 1 : unités complémentaires = 10
+    // unités complémentaires = 10
     if (mode === "astuce_unites10") {
       const d = rand(digits);
-      const u1 = rand(1);
+      const u1 = Math.floor(Math.random() * 9) + 1;
       const u2 = 10 - u1;
 
       setA(d * 10 + u1);
       setB(d * 10 + u2);
     }
 
-    // 🎯 MODE ASTUCE 2 : dizaines complémentaires = 10 + unités identiques
+    // dizaines complémentaires = 10
     else if (mode === "astuce_dizaines10") {
-      const d1 = rand(1);
+      const d1 = Math.floor(Math.random() * 9) + 1;
       const d2 = 10 - d1;
-      const u = rand(9);
+      const u = Math.floor(Math.random() * 9) + 1;
 
       setA(d1 * 10 + u);
       setB(d2 * 10 + u);
     }
 
-    // 🎯 modes classiques
     else {
       setA(rand(digits));
       setB(rand(digits));
@@ -57,7 +56,6 @@ export default function App() {
     if (mode === "division") return Math.round((a / b) * 100) / 100;
     if (mode === "carre") return a * a;
 
-    // astuce modes = multiplication réelle
     return a * b;
   }
 
@@ -85,7 +83,10 @@ export default function App() {
     if (user === correct) {
       setScore((s) => s + 1);
       successSound();
-      setTimeout(newQuestion, 200);
+
+      setTimeout(() => {
+        newQuestion();
+      }, 200);
     }
   }
 
@@ -94,11 +95,12 @@ export default function App() {
       window.SpeechRecognition || window.webkitSpeechRecognition;
 
     if (!SR) {
-      alert("Vocal non supporté");
+      alert("Reconnaissance vocale non supportée");
       return;
     }
 
     const rec = new SR();
+
     rec.lang = "fr-FR";
     rec.continuous = false;
     rec.interimResults = false;
@@ -121,9 +123,14 @@ export default function App() {
       if (user === correct) {
         setScore((s) => s + 1);
         successSound();
-        setTimeout(newQuestion, 200);
+
+        setTimeout(() => {
+          newQuestion();
+          voice();
+        }, 300);
       } else {
         setInput("");
+        voice();
       }
     };
 
@@ -206,17 +213,20 @@ export default function App() {
             </button>
           ))}
 
-          <button style={styles.btn} onClick={() => setInput("")}>
+          <button
+            style={styles.btn}
+            onClick={() => setInput("")}
+          >
             ⌫
           </button>
         </div>
 
-        {/* ACTIONS */}
-        <button style={styles.voice} onClick={voice}>
-          {listening ? "🎤..." : "🎤 Vocal"}
-        </button>
+      {/* ACTIONS */}
+<button style={styles.voice} onClick={voice}>
+  {listening ? "🎤..." : "🎤 Vocal"}
+</button>
 
-        <div style={{ display: "flex", gap: 5 }}>
+<div style={{ display: "flex", gap: 5 }}>
   <button
     style={styles.solution}
     onClick={() => {
@@ -236,8 +246,7 @@ export default function App() {
     Passer
   </button>
 </div>
-          Passer
-        </button>
+
       </div>
     </div>
   );
@@ -320,14 +329,14 @@ const styles = {
     borderRadius: 8,
   },
 
-solution: {
-  width: "100%",
-  padding: 10,
-  background: "#10b981",
-  color: "white",
-  border: "none",
-  borderRadius: 8,
-},
+  solution: {
+    width: "100%",
+    padding: 10,
+    background: "#10b981",
+    color: "white",
+    border: "none",
+    borderRadius: 8,
+  },
 
   skip: {
     width: "100%",
