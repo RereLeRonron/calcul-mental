@@ -21,55 +21,40 @@ export default function App() {
   function newQuestion() {
   const r = Math.random();
 
-  // 🔵 niveau débutant
+  // 🔵 sécurité absolue : fallback
+  let m = "addition";
+
   if (level <= 2) {
-    setMode("addition");
-    setA(rand(digits));
-    setB(rand(digits));
+    m = "addition";
   }
 
-  // 🟡 niveau intermédiaire
   else if (level <= 4) {
-    const modes = ["addition", "soustraction"];
-    setMode(modes[Math.floor(Math.random() * modes.length)]);
-
-    setA(rand(digits));
-    setB(rand(digits));
+    m = r < 0.5 ? "addition" : "soustraction";
   }
 
-  // 🟠 niveau avancé
   else if (level <= 6) {
-    const modes = ["multiplication", "addition", "soustraction"];
-    setMode(modes[Math.floor(Math.random() * modes.length)]);
-
-    setA(rand(digits));
-    setB(rand(digits));
+    const list = ["addition", "soustraction", "multiplication"];
+    m = list[Math.floor(Math.random() * list.length)];
   }
 
-  // 🔴 niveau fort
   else if (level <= 8) {
-    const modes = ["multiplication", "division", "carre"];
-    setMode(modes[Math.floor(Math.random() * modes.length)]);
-
-    setA(rand(digits));
-    setB(rand(digits));
+    const list = ["multiplication", "division", "carre"];
+    m = list[Math.floor(Math.random() * list.length)];
   }
 
-  // ⚡ expert (tes astuces incluses)
   else {
     const special = Math.random();
 
-    if (special < 0.4) {
-      setMode("astuce_unites10");
-    } else if (special < 0.8) {
-      setMode("astuce_dizaines10");
-    } else {
-      setMode("multiplication");
-    }
-
-    setA(rand(digits));
-    setB(rand(digits));
+    if (special < 0.4) m = "astuce_unites10";
+    else if (special < 0.8) m = "astuce_dizaines10";
+    else m = "multiplication";
   }
+
+  setMode(m);
+
+  // 🔥 IMPORTANT : toujours générer des nombres
+  setA(rand(digits));
+  setB(rand(digits));
 
   setInput("");
 }
