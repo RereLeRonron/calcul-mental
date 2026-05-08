@@ -9,6 +9,8 @@ export default function App() {
   const [mode, setMode] = useState("addition");
   const [digits, setDigits] = useState(2);
   const [listening, setListening] = useState(false);
+  
+  const [level, setLevel] = useState(1);
 
   function rand(n) {
     const min = Math.pow(10, n - 1);
@@ -17,37 +19,31 @@ export default function App() {
   }
 
   function newQuestion() {
-    // unités complémentaires = 10
-    if (mode === "astuce_unites10") {
-      const d = rand(digits);
-      const u1 = Math.floor(Math.random() * 9) + 1;
-      const u2 = 10 - u1;
+  if (mode === "astuce_unites10") {
+    const d = rand(digits);
+    const u1 = Math.floor(Math.random() * 9) + 1;
+    const u2 = 10 - u1;
 
-      setA(d * 10 + u1);
-      setB(d * 10 + u2);
-    }
-
-    // dizaines complémentaires = 10
-    else if (mode === "astuce_dizaines10") {
-      const d1 = Math.floor(Math.random() * 9) + 1;
-      const d2 = 10 - d1;
-      const u = Math.floor(Math.random() * 9) + 1;
-
-      setA(d1 * 10 + u);
-      setB(d2 * 10 + u);
-    }
-
-    else {
-      setA(rand(digits));
-      setB(rand(digits));
-    }
-
-    setInput("");
+    setA(d * 10 + u1);
+    setB(d * 10 + u2);
   }
 
-  useEffect(() => {
-    newQuestion();
-  }, [mode, digits]);
+  else if (mode === "astuce_dizaines10") {
+    const d1 = Math.floor(Math.random() * 9) + 1;
+    const d2 = 10 - d1;
+    const u = Math.floor(Math.random() * 9) + 1;
+
+    setA(d1 * 10 + u);
+    setB(d2 * 10 + u);
+  }
+
+  else {
+    setA(rand(digits));
+    setB(rand(digits));
+  }
+
+  setInput("");
+}
 
   function getAnswer() {
     if (mode === "addition") return a + b;
@@ -75,20 +71,22 @@ export default function App() {
   }
 
   function validate(val) {
-    if (val === "") return;
+  if (val === "") return;
 
-    const user = parseFloat(val);
-    const correct = getAnswer();
+  const user = parseFloat(val);
+  const correct = getAnswer();
 
-    if (user === correct) {
-      setScore((s) => s + 1);
-      successSound();
+  if (user === correct) {
+    setScore((s) => s + 1);
+    successSound();
 
-      setTimeout(() => {
-        newQuestion();
-      }, 200);
-    }
+    setLevel((l) => l + 1); // 🔥 monte en difficulté
+
+    setTimeout(newQuestion, 200);
+  } else {
+    setLevel((l) => Math.max(1, l - 1)); // 🔻 baisse un peu
   }
+}
 
   function voice() {
     const SR =
